@@ -180,6 +180,7 @@ function renderTearsheet(t){
     ["Net debt", fmtB(s.debt,s.mkt)], ["FCF yield", s.fcfYield==null?"—":s.fcfYield.toFixed(1)+"%"],
     ["P/E", s.pe==null?"—":s.pe.toFixed(1)], ["EV/EBITDA", s.evEbitda==null?"—":s.evEbitda.toFixed(1)],
     ["PEG", s.peg==null?"—":s.peg.toFixed(2)], ["Net debt/EBITDA", s.debtToEbitda==null?(s.debt<0?"net cash":"—"):s.debtToEbitda.toFixed(1)+"×"],
+    [s.mkt==="IN"?"Promoter holding":"Insider ownership", s.insiderPct==null?"—":s.insiderPct.toFixed(1)+"%"+(s.insiderTrend!=null?(s.insiderTrend>0?" ▲":" ▼"):"")],
   ];
 
   return `
@@ -215,6 +216,7 @@ function renderTearsheet(t){
   </div>
 
   ${renderAskClaude(s)}
+  ${renderEarningsSentiment(s)}
 
   <div class="viewtoggle">
     <button data-view="annual" class="${!isQ?'on':''}">Annual</button>
@@ -358,6 +360,61 @@ function buildPrompt(s, depth){
     ? "1. BUSINESS MODEL\n2. ECONOMIC MOAT (None/Narrow/Wide + trend)\n3. GROWTH ANALYSIS\n4. PROFITABILITY & RETURNS\n5. CASH FLOW & CAPITAL ALLOCATION\n6. BALANCE SHEET & RISK\n7. FAIR VALUE (triangulate using DCF + multiples)\n8. BULL CASE\n9. BEAR CASE\n10. VERDICT"
     : "1. SNAPSHOT\n2. MOAT (None/Narrow/Wide, one sentence)\n3. FAIR VALUE (undervalued/fair/overvalued, vs DCF)\n4. BULL CASE\n5. BEAR CASE\n6. VERDICT";
   return `You are a senior equity analyst writing an independent research brief for a non-expert investor. Use ONLY the data below — do not invent facts you can't derive from it. Use these exact section headers in CAPS:\n\n${sections}\n\n${depth==="full"?"450-650 words.":"200-300 words."} Data:\n${JSON.stringify(data)}`;
+}
+
+function buildEarningsPrompt(s, transcriptText){
+  const data={ticker:s.t,name:s.n,sector:s.sec,
+    recentRevenueYoY:s.revG, recentFcfYoY:s.fcfG, recentMarginTrend:s.marginTrend,
+    triggeredSignals:s.flags.map(f=>`[${f.cat}] ${f.tag}`)};
+  return `You are an equity analyst scoring management tone from an earnings call transcript. Read the transcript below and score it on these exact dimensions, each with a one-line justification quoting or closely paraphrasing the transcript (keep any quotes under 15 words):
+
+TONE SCORE: rate -2 (very cautious/defensive) to +2 (very confident/bullish), with reasoning
+GUIDANCE LANGUAGE: did management raise, maintain, lower, or avoid giving forward guidance? Quote the key phrase.
+HEDGING & DEFLECTION: count notable instances of hedging language ("uncertain," "challenging," "headwinds," evasive answers to analyst questions) vs confident, specific language
+ANALYST Q&A TENSION: did analysts push back or express skepticism? How did management respond?
+COMPARED TO FUNDAMENTALS: this company's recent numbers show revenue YoY of ${s.revG!=null?s.revG.toFixed(1)+'%':'unavailable'} and FCF YoY of ${s.fcfG!=null?s.fcfG.toFixed(1)+'%':'unavailable'}. Does management's tone match the numbers, sound more optimistic than the numbers justify, or more cautious than the numbers justify? This mismatch (if any) is the most useful signal — flag it clearly.
+OVERALL SENTIMENT: Bullish / Neutral / Cautious / Bearish, one paragraph summary.
+
+If I paste multiple transcripts (separated by "---NEXT CALL---"), score each one separately using the same format, then add a final TREND ACROSS CALLS section describing whether management tone is improving, stable, or deteriorating quarter over quarter.
+
+Company: ${JSON.stringify(data)}
+
+TRANSCRIPT(S):
+${transcriptText || "[paste the earnings call transcript here before sending — search \"" + s.n + " earnings call transcript\" to find the latest one, e.g. on Motley Fool, Seeking Alpha (free transcripts), or the company's own IR site]"}`;
+}
+
+function renderEarningsSentiment(s){
+  return `
+  <div class="askbox" style="background:linear-gradient(135deg,#f3eefc,#ece4fa);border-color:#d8c8f2">
+    <div class="askhead">
+      <div>
+        <div class="asktitle" style="color:#6d3dd3">◆ Earnings call sentiment</div>
+        <div class="asksub">Paste one or more recent transcripts below (separate multiple with <code>---NEXT CALL---</code> to track sentiment trend over quarters). Builds a scoring prompt and opens claude.ai — free, no API key. No bulk transcript source exists for free, so this works one stock at a time, on demand.</div>
+      </div>
+    </div>
+    <textarea id="transcriptBox" placeholder="Paste earnings call transcript(s) here, or leave blank to get a prompt with search instructions..." style="width:100%;min-height:90px;margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:7px;font-family:var(--sans);font-size:13px;box-sizing:border-box;resize:vertical"></textarea>
+    <div class="askbtns">
+      <button class="askbtn" style="background:#6d3dd3" data-earnings="${s.t}">Analyze sentiment →</button>
+    </div>
+    <div class="askdone" id="earningsDone">✓ Prompt copied — claude.ai opened in a new tab. Paste (Ctrl/Cmd+V) and press enter.</div>
+  </div>`;
+}
+
+async function handleEarnings(ticker){
+  const rows = computeRows();
+  const s = rows.find(r=>r.t===ticker);
+  if(!s) return;
+  const box = document.getElementById("transcriptBox");
+  const text = box ? box.value.trim() : "";
+  const prompt = buildEarningsPrompt(s, text);
+  try{ await navigator.clipboard.writeText(prompt); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=prompt; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+  }
+  window.open("https://claude.ai/new", "_blank");
+  const done=document.getElementById("earningsDone");
+  if(done) done.classList.add("show");
 }
 
 function renderAskClaude(s){
@@ -623,6 +680,7 @@ function wireEvents(){
   });
 
   root.querySelectorAll("[data-ask]").forEach(el=>el.onclick=()=>handleAsk(el.dataset.tk, el.dataset.ask));
+  root.querySelectorAll("[data-earnings]").forEach(el=>el.onclick=()=>handleEarnings(el.dataset.earnings));
 
   root.querySelectorAll("[data-driver]").forEach(el=>el.onclick=()=>{State.driverDir[el.dataset.driver]=el.dataset.dir;render();});
   root.querySelectorAll("[data-phase]").forEach(el=>el.onclick=()=>{State.phase=+el.dataset.phase;render();});

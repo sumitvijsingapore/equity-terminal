@@ -222,6 +222,14 @@ def pull(sym, mkt):
         "roa": round((info.get("returnOnAssets") or 0) * 100, 2) if info.get("returnOnAssets") else None,
         "beta": info.get("beta"),
         "high52": info.get("fiftyTwoWeekHigh"), "low52": info.get("fiftyTwoWeekLow"),
+        # Promoter holding (India) / insider ownership (US) -- Yahoo exposes a
+        # current snapshot only (heldPercentInsiders), no historical series for
+        # free. We store today's value; prevInsiderPct stays null until you
+        # manually backfill it (e.g. from Screener.in's shareholding pattern
+        # history for Indian names) or re-run this script next quarter and
+        # diff two saved data.json snapshots yourself.
+        "insiderPct": round((info.get("heldPercentInsiders") or 0) * 100, 2) if info.get("heldPercentInsiders") else None,
+        "prevInsiderPct": None,
         "annual": {
             "periods": periods(fin),
             "revenue": scaled(arev, mkt), "grossProfit": scaled(agp, mkt),
@@ -243,6 +251,21 @@ def pull(sym, mkt):
 
 
 def main():
+    import os
+    target = "public/data.json" if os.path.isdir("public") else "data.json"
+
+    # Load the previous run's output (if any) so we can carry forward last
+    # period's insider/promoter % as prevInsiderPct -- this is how the trend
+    # accumulates for free across successive runs, with no paid history API.
+    prev_insider = {}
+    try:
+        old = json.load(open(target))
+        for rec in old:
+            if rec.get("insiderPct") is not None:
+                prev_insider[rec["t"]] = rec["insiderPct"]
+    except Exception:
+        pass  # first run ever, or file missing/corrupt -- fine, just no history yet
+
     out, jobs = [], [(s, "US") for s in US] + [(s, "IN") for s in IN]
     est_min = round(len(jobs) * 1.0 / 60, 1)
     print(f"Fetching {len(jobs)} tickers (~{est_min} min at 1 req/sec)...\n")
@@ -250,13 +273,16 @@ def main():
         print(f"[{i}/{len(jobs)}] {s} ({m})")
         try:
             r = pull(s, m)
-            if r: out.append(r)
+            if r:
+                # carry forward last run's value as prevInsiderPct, but only
+                # if it actually differs from today's (otherwise no new info)
+                old_val = prev_insider.get(s)
+                if old_val is not None and old_val != r.get("insiderPct"):
+                    r["prevInsiderPct"] = old_val
+                out.append(r)
         except Exception as e:
             print(f"  ! {s}: {e}")
         time.sleep(1.0)
-    # write into public/ so the Vite app can fetch it (fallback: current dir)
-    import os
-    target = "public/data.json" if os.path.isdir("public") else "data.json"
     def clean(o):
         if isinstance(o, float):
             return None if (o != o or o in (float("inf"), float("-inf"))) else o

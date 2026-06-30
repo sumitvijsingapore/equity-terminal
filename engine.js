@@ -23,7 +23,7 @@ function mk(t,n,mkt,sec,ind,price,shares,mcap,ev,debt,g,mult,A,Q){
 
 const SAMPLE=[
  mk("AAPL","Apple Inc.","US","Technology","Consumer Electronics",213,15.2,3238,3258,50,8,
-  {pe:33,fpe:30,pb:51,ps:8.3,evEbitda:24,divYield:0.5,roe:147,roa:29,beta:1.25,high52:237,low52:164},
+  {pe:33,fpe:30,pb:51,ps:8.3,evEbitda:24,divYield:0.5,roe:147,roa:29,beta:1.25,high52:237,low52:164,insiderPct:2.1,prevInsiderPct:1.8},
   {revenue:[391,383,394,366],grossProfit:[180,169,171,153],operatingIncome:[123,114,119,109],ebitda:[135,126,130,120],netIncome:[94,97,100,95],ocf:[118,111,122,104],capex:[-10,-11,-11,-11],fcf:[108,100,111,93]},
   {revenue:[124,95,86,91,120,90,82,95],operatingIncome:[42,29,26,28,40,27,23,30],ebitda:[46,33,30,32,44,31,27,34],netIncome:[36,15,21,24,34,23,20,28],fcf:[35,21,22,28,33,19,21,27]}),
  mk("MSFT","Microsoft Corp.","US","Technology","Software—Infrastructure",497,7.43,3693,3663,-30,13,
@@ -39,7 +39,7 @@ const SAMPLE=[
   {revenue:[164,135,116,118],grossProfit:[134,108,92,93],operatingIncome:[69,47,29,47],ebitda:[87,62,42,57],netIncome:[62,39,23,39],ocf:[91,71,50,57],capex:[-37,-28,-32,-19],fcf:[54,43,18,38]},
   {revenue:[48,41,39,36,40,34,32,29],operatingIncome:[23,17,15,14,16,13,11,7],ebitda:[28,22,20,18,21,18,15,11],netIncome:[21,16,13,12,14,12,8,5],fcf:[13,15,11,15,12,10,5,11]}),
  mk("RELIANCE","Reliance Industries","IN","Energy","Oil & Gas Refining",1490,1353,201600,317600,116000,10,
-  {pe:25,fpe:21,pb:2.1,ps:2.0,evEbitda:11,divYield:0.4,roe:8.5,roa:3.8,beta:1.0,high52:1609,low52:1115},
+  {pe:25,fpe:21,pb:2.1,ps:2.0,evEbitda:11,divYield:0.4,roe:8.5,roa:3.8,beta:1.0,high52:1609,low52:1115,insiderPct:50.3,prevInsiderPct:50.6},
   {revenue:[1000000,974000,976000,792000],grossProfit:null,operatingIncome:[145000,138000,130000,110000],ebitda:[178000,166000,158000,128000],netIncome:[79000,73000,67000,60000],ocf:[160000,115000,110000,98000],capex:[-125000,-118000,-141000,-95000],fcf:[35000,-3000,-31000,3000]},
   {revenue:[267000,258000,250000,236000],operatingIncome:[40000,38000,36000,34000],ebitda:[48000,45000,44000,42000],netIncome:[21000,19000,18000,17000],fcf:[12000,8000,9000,6000]}),
  mk("TCS","Tata Consultancy","IN","Technology","IT Services",3450,362,124890,74890,-50000,9,
@@ -216,11 +216,30 @@ function analyze(raw, intrinsic){
     "Caught early in quarterly data, this often precedes upward earnings revisions, which is what tends to move stocks.",
     "Confirm it's operational and not a one-off tax benefit or asset sale.");
 
+  // ---------- OWNERSHIP (promoter holding / insider ownership) ----------
+  const insiderTrend = (s.insiderPct!=null && s.prevInsiderPct!=null) ? s.insiderPct - s.prevInsiderPct : null;
+  if(insiderTrend!=null && insiderTrend>1)add("good","Ownership","Promoters/insiders increasing stake",
+    `${s.mkt==="IN"?"Promoter":"Insider"} holding rose from ${s.prevInsiderPct.toFixed(1)}% to ${s.insiderPct.toFixed(1)}% — the people who know the business best are buying more of it.`,
+    "Insiders have information no outsider has. When they voluntarily increase their own stake — using their own money — it's one of the strongest votes of confidence available, far more reliable than anything management says in a press release.",
+    "Check whether the increase came from open-market buying (bullish) or a preferential allotment/ESOP exercise (more neutral). Pair with rising FCF for the strongest combination.");
+  if(insiderTrend!=null && insiderTrend<-1)add("warn","Ownership",`${s.mkt==="IN"?"Promoter":"Insider"} stake declining`,
+    `${s.mkt==="IN"?"Promoter":"Insider"} holding fell from ${s.prevInsiderPct.toFixed(1)}% to ${s.insiderPct.toFixed(1)}%.`,
+    "Insiders selling isn't always bearish — it can be diversification, pledging shares for a loan, or estate planning. But a sustained decline, especially alongside weak fundamentals, is worth taking seriously since it removes the strongest aligned shareholder.",
+    "Look for the reason if disclosed (pledge, OFS, block deal). One quarter's dip is noise; a multi-quarter decline paired with other warning flags is the real signal.");
+  if(s.insiderPct!=null && s.insiderPct>50 && insiderTrend==null)add("good","Ownership","High insider alignment",
+    `${s.mkt==="IN"?"Promoters hold":"Insiders hold"} ${s.insiderPct.toFixed(0)}% of the company — strong skin in the game.`,
+    "High insider ownership aligns management's incentives with shareholders' — they win and lose alongside you, which tends to discourage empire-building and excessive risk-taking with your capital.",
+    "Very high concentration (>75%) can cut the other way — thin free float, harder for outside shareholders to influence governance. Moderate-to-high (40-70%) is usually the sweet spot.");
+  if(s.insiderPct!=null && s.insiderPct<5)add("warn","Ownership","Low insider ownership",
+    `${s.mkt==="IN"?"Promoters hold":"Insiders hold"} only ${s.insiderPct.toFixed(1)}% of the company.`,
+    "When management owns very little of the business, their financial incentives are weighted toward salary and bonus rather than the stock price — the classic agency problem between owners and managers.",
+    "Less concerning for mega-cap, widely-held companies with strong governance; more concerning for smaller or founder-led businesses where you'd expect higher alignment.");
+
   const goods=F.filter(f=>f.s==="good").length, warns=F.filter(f=>f.s==="warn").length;
   const verdict = goods-warns>=2 ? {l:"Constructive",c:"#1a8a63"} : warns-goods>=2 ? {l:"Caution",c:"#c0392b"} : {l:"Mixed signals",c:"#b8860b"};
 
   return { ...s, intrinsic, revG,niG,fcfG,ebitdaG,revQ,fcfQ,niQ,marginTrend,opMarginTrend,fcfNi,mos,pricePos,
-    nmNow,omNow,emNow, fcfYield,earnYield,ruleOf40,debtToEbitda,revDecel,peg,capexIntensity,
+    nmNow,omNow,emNow, fcfYield,earnYield,ruleOf40,debtToEbitda,revDecel,peg,capexIntensity,insiderTrend,
     revCagr:cagr(A.revenue), fcfCagr:cagr(A.fcf), niCagr:cagr(A.netIncome),
     flags:F, verdict,
     healthScore: Math.round(Math.max(0,Math.min(100,

@@ -72,6 +72,29 @@ minutes per run, well within the free monthly quota for any account).
 
 ---
 
+## Promoter holding / insider ownership
+Each tearsheet now tracks promoter holding (India) / insider ownership (US) as
+a real metric, with a rising/falling signal in the Ownership category of the
+signal matrix. Yahoo only exposes a current snapshot, not history -- so the
+trend builds itself automatically: every time you re-run `fetch_data.py`, it
+reads the previous `data.json` first and carries forward last run's value as
+`prevInsiderPct`, so the trend accumulates for free across successive refreshes
+(including the daily GitHub Action). The first run after this update will show
+no trend yet -- it appears starting from the second refresh onward.
+
+## Earnings call sentiment (on-demand)
+Each tearsheet has an "Earnings call sentiment" panel: paste a transcript (or
+several, separated by `---NEXT CALL---`, to track tone over quarters), click
+"Analyze sentiment," and it builds a structured scoring prompt -- tone, guidance
+language, hedging, analyst pushback, and critically, whether management's tone
+matches the company's actual recent numbers -- then opens claude.ai with it
+copied to your clipboard. Paste and enter, same free pattern as Ask Claude.
+
+Honest limitation: there's no free bulk transcript API, so this only works one
+stock at a time, on demand, when you paste in a transcript yourself. Free
+transcript sources to search: Motley Fool, the company's own investor relations
+page, or Seeking Alpha (some free, most paywalled).
+
 ## "Ask Claude" / "Deep Research" -- free, no API key
 
 These buttons don't call any API and cost nothing to use:
