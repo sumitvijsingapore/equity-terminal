@@ -3,6 +3,7 @@ name: Refresh market data
 on:
   schedule:
     - cron: "30 0 * * *"
+    - cron: "0 2 * * 0"
   workflow_dispatch: {}
 
 permissions:
@@ -16,14 +17,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install yfinance
-        run: pip install yfinance
-      - name: Run fetch script
+      - name: Install dependencies
+        run: pip install yfinance requests beautifulsoup4
+      - name: Run price + fundamentals fetch
         run: python fetch_data.py
-      - name: Commit updated data.json
+      - name: Run macro environment fetch (daily, fast)
+        run: python fetch_macro.py
+      - name: Run EDGAR earnings fetch (full SP500, weekly)
+        run: |
+          DAY=$(date -u +%u)
+          if [ "$DAY" = "7" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Running EDGAR fetch..."
+            python -c "import fetch_edgar; fetch_edgar.main(use_test_list=False)"
+          else
+            echo "Skipping EDGAR fetch (daily run) - runs Sundays only."
+          fi
+      - name: Run earnings price-reaction fetch (weekly)
+        run: |
+          DAY=$(date -u +%u)
+          if [ "$DAY" = "7" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "Running reactions fetch..."
+            python fetch_reactions.py || echo "Skipped - edgar_transcripts.json not ready yet"
+          else
+            echo "Skipping reactions fetch (daily run) - runs Sundays only."
+          fi
+      - name: Commit updated data files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json
+          git add data.json macro.json edgar_transcripts.json reactions.json 2>/dev/null || git add data.json macro.json
           git diff --cached --quiet || git commit -m "Refresh market data $(date -u +%Y-%m-%d)"
           git push
