@@ -23,6 +23,11 @@ const State = {
   showWatchlist: false,
   watchlist: JSON.parse(localStorage.getItem("terminal_watchlist")||"[]"),
   compare: [],
+  playbookCat: "all",
+  playbookOpen: null,
+  learnSection: "all",
+  learnSearch: "",
+  decisionOpen: null,
 };
 
 function saveWatchlist(){ localStorage.setItem("terminal_watchlist", JSON.stringify(State.watchlist)); }
@@ -70,6 +75,8 @@ const PRESETS=[
   {id:"all", label:"All stocks", n:"", test:()=>true},
   {id:"quality", label:"Quality compounders", n:"ROE>20% · FCF/NI≥1 · low debt",
    test:s=>s.roe>20 && (s.fcfNi==null||s.fcfNi>=0.9) && (s.debtToEbitda==null||s.debtToEbitda<2)},
+  {id:"qfp", label:"Quality at fair price", n:"ROE>18% · FCF/NI≥0.9 · DCF gap>10% · FCF growing",
+   test:s=>s.roe!=null && s.roe>18 && (s.fcfNi==null||s.fcfNi>=0.9) && (s.debtToEbitda==null||s.debtToEbitda<2.5) && s.mos!=null && s.mos>10 && s.fcfG!=null && s.fcfG>0},
   {id:"value", label:"Undervalued + growing", n:"DCF gap>15% · FCF growing",
    test:s=>s.mos!=null && s.mos>15 && s.fcfG!=null && s.fcfG>0},
   {id:"cash", label:"Cash machines", n:"Top FCF yield",
@@ -109,6 +116,8 @@ function renderHeader(){
         <button data-tab="stocks" class="${State.tab==='stocks'?'on':''}">Stocks</button>
         <button data-tab="sectors" class="${State.tab==='sectors'?'on':''}">Sectors &amp; cycles</button>
         <button data-tab="compare" class="${State.tab==='compare'?'on':''}">Compare${State.compare.length?` (${State.compare.length})`:''}</button>
+        <button data-tab="playbook" class="${State.tab==='playbook'?'on':''}">Playbook</button>
+        <button data-tab="learn" class="${State.tab==='learn'?'on':''}">Learn</button>
       </div>
       <button class="watchbtn" id="watchToggle">★ Watchlist (${State.watchlist.length})</button>
       <span class="livebadge ${State.live?'live':'sample'}">${State.live?'● LIVE · YAHOO':'● SAMPLE DATA'} · ${State.data.length} names</span>
@@ -216,6 +225,7 @@ function renderTearsheet(t){
   </div>
 
   <div class="takeaway">${takeaway(s)}</div>
+  ${renderDecisionEngine(s)}
   ${renderIntegratedVerdict(s, rows)}
 
   <div class="kpiCore">
@@ -812,6 +822,436 @@ function renderCompare(){
 }
 const CMP_COLORS=["#0e6e5c","#6d5dd3","#c0392b","#b8860b","#2563eb"];
 
+/* ============================================================
+   PLAYBOOK TAB — the combinations catalog. Each entry is a named,
+   multi-metric pattern with a live match count against your
+   current dataset. Click a card to see which stocks match right
+   now; click a match to open its tearsheet.
+   ============================================================ */
+function renderPlaybook(){
+  const rows = computeRows();
+  const ctx = { macro: MACRO_DATA, rows };
+
+  const withMatches = PLAYBOOK.map(p=>{
+    let matches = [];
+    try { matches = rows.filter(s=>p.test(s, ctx)); } catch(e){ matches = []; }
+    return {...p, matches};
+  });
+
+  const cats = ["all", ...PLAYBOOK_CATEGORIES];
+  const filtered = State.playbookCat==="all" ? withMatches : withMatches.filter(p=>p.cat===State.playbookCat);
+
+  return `
+  <div class="secintro">
+    <h2>The Combinations Playbook</h2>
+    <p>Twenty-four named, multi-metric patterns — the kind of cross-referencing a professional analyst does by habit. Each one combines several signals into a single recognizable setup, with a live count of how many stocks in your dataset match it right now. Click a card to see exactly which ones.</p>
+  </div>
+
+  <div class="presets" style="margin-bottom:18px">
+    ${cats.map(c=>`<button class="preset ${State.playbookCat===c?'on':''}" data-pbcat="${c}">${c==="all"?"All categories":c}</button>`).join("")}
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${filtered.map(p=>{
+      const isOpen = State.playbookOpen===p.id;
+      const n = p.matches.length;
+      return `
+      <div class="panel" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:16px" data-pbtoggle="${p.id}">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-weight:800;font-size:15px">${p.name}</span>
+              <span style="font-size:10px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px">${p.cat}</span>
+            </div>
+            <div style="font-family:var(--mono);font-size:11.5px;color:var(--accent);margin-top:6px">${p.formula}</div>
+          </div>
+          <span class="pill ${n>0?'good':'neutral'}" style="flex-shrink:0;white-space:nowrap">${n} match${n===1?'':'es'}</span>
+        </div>
+        ${isOpen?`
+        <div style="padding:0 20px 18px;border-top:1px solid var(--line)">
+          <p style="font-size:13px;color:#333;line-height:1.6;margin:14px 0 10px"><b>What it means:</b> ${p.meaning}</p>
+          <p style="font-size:13px;color:#333;line-height:1.6;margin:0 0 14px"><b>How to read it:</b> ${p.read}</p>
+          ${n===0?`<p style="font-size:12.5px;color:var(--dim)">No stocks in your current dataset match this combination right now.</p>`:`
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${p.matches.slice(0,30).map(s=>`
+              <button class="preset" data-open="${s.t}" style="padding:6px 12px">
+                <b>${s.t}</b><span class="n">${sign(s.mos)} vs DCF</span>
+              </button>`).join("")}
+            ${n>30?`<span style="font-size:12px;color:var(--dim);align-self:center">+${n-30} more</span>`:''}
+          </div>`}
+        </div>`:''}
+      </div>`;
+    }).join("")}
+  </div>
+  <p class="hint">Combinations recompute live from your current dataset every time you open this tab. Some (Macro Tailwind Compounder, Fighting the Tide) need <code>macro.json</code> loaded to activate — see the Macro Environment panel on any tearsheet for setup.</p>
+  `;
+}
+
+/* ============================================================
+   LEARN TAB — the complete reference guide. Every ratio, signal,
+   combination, and concept used anywhere in the dashboard,
+   explained in plain English with worked examples, organized
+   into sections a non-expert can read as a course or reference.
+   ============================================================ */
+const LEARN_CONTENT = [
+  /* ────────────────────────────────────────────────────────
+     SECTION 1: THE FUNDAMENTALS OF FUNDAMENTALS
+  ──────────────────────────────────────────────────────── */
+  { section:"The fundamentals of fundamentals",
+    items:[
+      { term:"Revenue", also:"Sales, Top line",
+        what:"The total money a company receives from selling its products or services, before any costs are subtracted.",
+        why:"It's the starting point for everything — a business that can't grow revenue has limited options. But revenue is also the most easily manipulated headline number, which is why analysts never stop at revenue alone.",
+        how:"Look at the trend, not a single year. Is it growing, flat, or declining? Is the growth rate accelerating or decelerating? A business growing 20% then 10% then 5% is telling you something important even though all three numbers are positive.",
+        example:"Apple reports $391B in revenue. That number alone tells you size. The +2% YoY growth is what tells you the pace. The fact that FCF grew at a different rate is what tells you quality.",
+        trap:"Revenue growth funded by aggressive discounting or channel-stuffing (shipping excess inventory to dealers) inflates the number without creating real value. Always cross-check with FCF and margin direction."},
+
+      { term:"EBITDA", also:"Earnings Before Interest, Taxes, Depreciation & Amortisation",
+        what:"Operating profit before accounting adjustments — essentially, what the business earns from its operations before the cost of debt, taxes, or depreciation of past investments.",
+        why:"It's the most commonly used proxy for 'operating cash profit' because it strips out financing choices (interest) and tax structures (which vary by country) and accounting charges (depreciation/amortisation) that differ across companies. Allows fairer cross-company comparisons.",
+        how:"Use EBITDA margin (EBITDA÷Revenue) to compare profitability across companies regardless of their capital structure. A 30%+ EBITDA margin typically signals pricing power — the business keeps a large fraction of every sales dollar before these costs.",
+        example:"Two companies both earn $100M in net income. Company A has EBITDA of $200M (low depreciation, no debt). Company B has EBITDA of $400M but heavy debt and depreciation. EBITDA reveals B is operationally stronger, even though net income is the same.",
+        trap:"EBITDA ignores the cash cost of replacing equipment (capex) and is therefore a less reliable measure for capital-intensive businesses like manufacturers or telecom companies. For asset-light businesses like software, it's a reasonable approximation."},
+
+      { term:"Net income", also:"Profit, Bottom line, Earnings",
+        what:"What's left after every cost — operating expenses, interest on debt, taxes, depreciation — has been subtracted from revenue.",
+        why:"The headline number most people watch, and consequently the most managed number in a company's accounts. Management teams have legitimate leeway in how and when they recognise revenue, how they estimate depreciation, and how they treat one-off charges.",
+        how:"Treat net income as a starting point, not an endpoint. The key cross-check is FCF/Net income. If net income is growing but free cash flow isn't keeping pace, the profit growth is partly accounting-driven rather than real.",
+        example:"A company reports $5B net income, up 20% YoY. But FCF is $2B, flat. FCF/NI = 0.4 — only 40 cents of every dollar of reported profit is cash. The growth in earnings is partly on paper.",
+        trap:"'Non-GAAP' or 'adjusted' earnings exclude charges management considers one-off. Sometimes that's reasonable (a genuine restructuring). Sometimes the same charge appears every year — a red flag that 'exceptional' items are actually part of the business."},
+
+      { term:"Free cash flow (FCF)", also:"Owner earnings, True profit",
+        what:"Operating cash flow minus capital expenditure (capex). The actual cash the business generates after paying to maintain and grow its physical assets — the money that can be paid to shareholders, used for acquisitions, or reinvested.",
+        why:"If net income is an opinion, FCF is a fact. You cannot fake cash in a bank account the way you can manage an accounting profit number. FCF is what Warren Buffett means by 'owner earnings' — the real return to the business's owners.",
+        how:"Compare FCF to net income (FCF/NI ratio). Above 1.0 means cash exceeds accounting profit — excellent quality. Below 0.7 means profit is running ahead of cash — use caution. Look at multi-year FCF trend, not a single year (one bad capex year can distort it).",
+        example:"Microsoft reports $88B net income and $74B FCF. FCF/NI = 0.84. Respectable. Apple reports $94B net income and $108B FCF. FCF/NI = 1.15 — cash actually exceeds reported profit. Apple generates more cash than its accounting says it earns.",
+        trap:"FCF can look low during a genuine growth investment phase (heavy capex for a new factory, data centre build-out) that will generate returns later. Always ask: is the capex maintenance (replacing worn equipment) or growth (building new capacity)?"},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 2: MARGINS — READING THE ECONOMICS
+  ──────────────────────────────────────────────────────── */
+  { section:"Margins — reading the economics",
+    items:[
+      { term:"Gross margin", also:"Gross profit margin",
+        what:"(Revenue − Cost of goods sold) ÷ Revenue. What's left after paying for the direct cost of making or delivering the product/service.",
+        why:"Gross margin is the clearest indicator of pricing power. A high gross margin means the market pays significantly more than it costs to produce — the business has something competitors can't easily replicate. Software businesses can have 70-80% gross margins. Retailers might run 25%.",
+        how:"Look at the trend. Expanding gross margin while growing is the cleanest sign that the business is getting structurally stronger. Contracting gross margin during growth means rising input costs or discounting to win share — both worth understanding.",
+        example:"Hindustan Unilever's gross margin tells you how much room it has between what it charges for soap and shampoo and what it pays for palm oil and packaging. When crude-derived input costs fall, gross margin expands before the market notices.",
+        trap:"Some industries (financial services, banks) don't have a meaningful 'gross margin' in the traditional sense. Don't compare gross margins across radically different industries — compare within sector."},
+
+      { term:"Operating margin", also:"EBIT margin",
+        what:"Operating income ÷ Revenue. Profit after operating costs (salaries, rent, R&D) but before interest and taxes.",
+        why:"Shows how efficiently the core business runs, independent of how it's financed. Two otherwise identical businesses with different debt levels will show different net margins but the same operating margin — making it fairer for comparison.",
+        how:"Expanding operating margin while growing revenue = operating leverage at work. Stable operating margin while growing = healthy, sustainable business. Compressing operating margin while growing revenue = buying growth, not earning it.",
+        example:"If TCS grows revenue 10% but operating margin rises from 24% to 25%, that extra 1 point on a $25B revenue base is $250M of additional profit falling straight to the bottom line from the same basic business structure.",
+        trap:"Operating margin can be manipulated by cutting R&D or marketing — costs that don't hurt today's profit but hurt tomorrow's revenue. Check that margin expansion is coming from genuine efficiency, not underinvestment."},
+
+      { term:"Net margin", also:"Net profit margin",
+        what:"Net income ÷ Revenue. The final percentage of every sales rupee or dollar that ends up as profit after every single cost.",
+        why:"The bottom-line efficiency of the whole enterprise, including its financing and tax situation. Useful but noisier than operating margin because it's affected by debt levels and tax structures.",
+        how:"Compare within a sector and over time for the same company. A net margin of 25% is world-class for a consumer goods company and mediocre for a software business. Context is everything.",
+        example:"Infosys earns ~16% net margin on IT services revenue. HCL Technologies earns ~14%. Both respectable. A tyre manufacturer earning 6% net margin is doing fine; a software company earning 6% has a problem.",
+        trap:"Net margin can be flattered by one-off gains (selling a building, releasing a tax provision) or crushed by one-off charges (write-offs, restructuring). Always check whether the margin is sustainable or driven by something non-recurring."},
+
+      { term:"FCF margin", also:"Free cash flow margin",
+        what:"Free cash flow ÷ Revenue. What percentage of each sales dollar actually becomes cash.",
+        why:"The most honest profitability measure. Unlike net margin (accounting opinion) or EBITDA margin (ignores capex), FCF margin reflects what the business truly generates after all real cash costs, including the cost of sustaining its asset base.",
+        how:"Compare to net margin. FCF margin > net margin = strong cash conversion, a quality signal. FCF margin substantially below net margin = watch carefully, accounting profit may be overstated relative to real cash generation.",
+        example:"Apple: $108B FCF ÷ $391B revenue = 27.6% FCF margin. For every dollar of iPhone or service revenue, 27 cents becomes actual cash. That's exceptional. Compare to a retailer with $100B revenue and $1B FCF = 1% FCF margin.",
+        trap:"A low FCF margin in one year can be justified by an investment phase (heavy capex). The question is always: is this temporary and purposeful, or is this structural?"},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 3: VALUATION — WHAT ARE YOU PAYING?
+  ──────────────────────────────────────────────────────── */
+  { section:"Valuation — what are you paying?",
+    items:[
+      { term:"P/E ratio", also:"Price-to-earnings, earnings multiple",
+        what:"Market price per share ÷ Earnings per share. How many rupees/dollars you pay for each rupee/dollar of annual profit.",
+        why:"The most widely-used valuation metric. A P/E of 20 means you're paying 20 years' worth of current earnings for the stock. It tells you the market's confidence in the earnings: high P/E = high growth expected; low P/E = low growth or uncertainty expected.",
+        how:"Never look at P/E in isolation. Always ask: high or low relative to (1) its own history, (2) its sector peers, and (3) its growth rate (see PEG). A P/E of 30 on 30% growth is reasonable. A P/E of 30 on 5% growth is expensive.",
+        example:"Apple trades at P/E 33. Microsoft at P/E 38. The sector trades at P/E 28. Both are above the sector median — the market is paying a premium for their scale, brand, and ecosystem lock-in. Whether that premium is justified is the question the rest of the analysis answers.",
+        trap:"P/E is meaningless when earnings are negative, or when earnings are temporarily depressed or inflated by one-off items. During a cyclical trough, P/E can look deceptively high (suppressed earnings); at a peak, deceptively low (inflated earnings). Always use normalised earnings for cyclicals."},
+
+      { term:"PEG ratio", also:"Price/Earnings-to-Growth",
+        what:"P/E ratio ÷ Earnings growth rate. Adjusts the earnings multiple for how fast those earnings are growing.",
+        why:"A P/E of 30 sounds expensive until you learn earnings are growing 40% — then it's cheap. PEG normalises for this. A PEG below 1.0 traditionally suggests you're not paying a full premium for the growth you're getting.",
+        how:"Use PEG only when both the P/E and the growth rate are positive. PEG < 1.0 = Growth at a Reasonable Price. PEG > 2.0 = paying richly for growth. The growth rate used matters enormously — use a sustainable multi-year estimate, not one exceptional quarter.",
+        example:"NVIDIA at P/E 53, earnings growth 80% → PEG 0.66. Very cheap on a PEG basis, despite looking expensive on raw P/E. But is 80% growth sustainable? If it falls to 20%, PEG suddenly becomes 2.7 — expensive.",
+        trap:"PEG is nearly useless for cyclical companies (earnings swing too much), financial companies (different business model), and capital-intensive businesses. Use it for stable-growth businesses only. And always stress-test the growth rate assumption."},
+
+      { term:"EV/EBITDA", also:"Enterprise value to EBITDA",
+        what:"Enterprise Value (market cap + net debt) ÷ EBITDA. How many years of operating cash profit you're paying for the whole business, including its debt.",
+        why:"The multiple professional acquirers and investment bankers actually use, because it accounts for capital structure. Two companies with identical P/Es but different debt loads will have very different EV/EBITDA ratios — the one with more debt is cheaper on P/E but not necessarily a better deal.",
+        how:"Under 10× on solid margins is historically inexpensive for an established business. 15-20× is normal for quality. Above 25× implies significant premium or growth expectations. Compare within sector. Use median of past 3-5 years to get a sense of 'normal' for that company.",
+        example:"Reliance Industries at EV/EBITDA 11× with 18% EBITDA margin. TCS at EV/EBITDA 18× with 27% EBITDA margin. TCS is more expensive on this metric but arguably warrants it — higher margins, less capital intensity, better FCF conversion.",
+        trap:"EV/EBITDA ignores capex. A business with a 10× EV/EBITDA multiple but 60% of EBITDA consumed by maintenance capex (like a telco or utility) is not as cheap as the multiple implies. Always pair with FCF yield."},
+
+      { term:"Price/Sales (P/S)", also:"Revenue multiple",
+        what:"Market cap ÷ Annual revenue. What you're paying per unit of sales.",
+        why:"Useful when a company has no earnings yet (loss-making growth businesses) or when earnings are temporarily distorted. Also useful for comparing across industries where profit margins are structurally different.",
+        how:"P/S means very little without margin context. A P/S of 5× on a 30% FCF margin business is reasonable. A P/S of 5× on a 2% net margin business means the market is pricing in a very large margin improvement that hasn't happened yet.",
+        example:"Early-stage software companies are often valued on P/S because they're investing aggressively and running losses. A P/S of 10× means the market expects them to eventually achieve competitive margins on that revenue base.",
+        trap:"P/S is the most easily misused multiple because it ignores profitability entirely. A company with £10B revenue and £9.9B of costs has the same P/S as one with £10B revenue and £7B of costs. Never use P/S without checking the margin profile."},
+
+      { term:"DCF — intrinsic value", also:"Discounted cash flow, fundamental value",
+        what:"A method to calculate what a business is worth today based on all the cash it will generate in the future, discounted back to present value because money today is worth more than the same amount in the future.",
+        why:"The theoretically correct way to value any income-producing asset. Forces you to make your assumptions explicit — what growth rate, for how long, and what discount rate — rather than hiding them in a multiple.",
+        how:"The dashboard uses a two-stage model: FCF grows at the stock's current rate (fading over 10 years to the terminal rate), discounted at your chosen rate. Adjust the sliders on the tearsheet. The discount rate should roughly equal your required return (typically 10-12% for equities). Terminal rate should be conservative (2-3%).",
+        example:"If Apple's FCF is $108B growing at 8% for 10 years then 3% forever, discounted at 10%, the intrinsic value per share works out to roughly $127. Current price is $213. So at 10% discount rate, Apple looks expensive on DCF. But if you used 8% discount rate, the picture changes significantly — which is exactly why the slider matters.",
+        trap:"DCF is extremely sensitive to assumptions. A 1% change in the terminal growth rate can move the intrinsic value by 30-40%. The dashboard's DCF is a starting point for structured thinking, not a precision instrument. Always stress-test it with conservative assumptions before concluding something is 'cheap.'"},
+
+      { term:"FCF yield", also:"Owner earnings yield, cash return",
+        what:"Free cash flow ÷ Market cap. The percentage return you'd receive if the company paid out all its free cash flow to you.",
+        why:"The cleanest single valuation metric for a cash-generative business. Directly comparable to a bond yield: you can ask 'what's the risk-free rate?' and judge whether the equity's cash return compensates for the additional risk.",
+        how:"Compare FCF yield to the 10-year government bond yield. Spread of >2 points above the risk-free rate suggests reasonable equity compensation. Spread close to zero or negative means bonds currently pay as well or better — you need significant growth to justify the equity risk.",
+        example:"If a company has 6% FCF yield and the 10-year Treasury yields 4.5%, your spread is 1.5 points — modest. If the same company also has 10% FCF growth, the yield expands over time, making the current entry point more attractive. Context: a company with 3% FCF yield and 25% growth is different from one with 8% FCF yield and 2% growth.",
+        trap:"FCF yield is only useful on businesses with stable, recurring FCF. On cyclical businesses (miners, energy, construction) FCF swings wildly with commodity prices — don't use peak-cycle FCF yield to conclude it's cheap. Use mid-cycle estimates."},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 4: RETURNS — IS CAPITAL BEING USED WELL?
+  ──────────────────────────────────────────────────────── */
+  { section:"Returns — is capital being used well?",
+    items:[
+      { term:"ROE — Return on Equity",
+        what:"Net income ÷ Shareholders' equity. How much profit the company earns on the money shareholders have invested.",
+        why:"Buffett's favourite metric. A high, sustained ROE tells you the business earns exceptional returns on the capital it employs — the hallmark of a competitive advantage. Mediocre ROE means the business is ordinary, regardless of size.",
+        how:"Above 20% sustained = strong indication of competitive advantage. 10-20% = reasonable but not exceptional. Below 10% = business is earning less than equity's typical cost of capital — destroying value. Always ask: is the ROE high because of genuine business quality, or because of heavy borrowing?",
+        example:"TCS: ROE 51%. This means for every ₹100 of shareholder equity, TCS earns ₹51 of profit. That's a formidable return sustained over many years — proof of structural advantage in IT services. Compare to a steel company at ROE 8%, which might be earning less than its cost of capital.",
+        trap:"Leverage inflates ROE automatically. If a company borrows heavily and earns a mediocre 8% return on assets, it can still show a 20%+ ROE just from the mathematics of leverage. Always check ROA alongside ROE. If ROE is high but ROA is low, debt is doing the work, not the business."},
+
+      { term:"ROA — Return on Assets",
+        what:"Net income ÷ Total assets. How efficiently the company uses its total asset base (funded by both equity and debt) to generate profit.",
+        why:"Strips out the leverage effect that can make ROE misleading. Two businesses with identical ROA can have wildly different ROEs if one uses more debt. ROA reveals the underlying operational productivity of the asset base.",
+        how:"For non-financial companies: above 10% is strong, 5-10% is acceptable, below 5% is often mediocre. For banks: 1%+ is generally sound (banks use very high leverage by design, so ROA naturally looks low).",
+        example:"A bank with 15% ROE and 1.2% ROA is doing fine — leverage is intentional and regulated. A manufacturing company with 18% ROE and 2% ROA is using 9:1 leverage to achieve a mediocre ROA, which is a red flag unless it's a utility-type business with contracted revenues.",
+        trap:"Asset values on balance sheets can be stale (land bought decades ago at old prices) or aggressive (goodwill from past acquisitions that may be impaired). Don't take book asset values at face value without checking footnotes."},
+
+      { term:"ROIC — Return on Invested Capital",
+        what:"NOPAT (Net Operating Profit After Tax) ÷ Invested Capital. The return the business earns on the capital it has deployed to run its operations.",
+        why:"Arguably the most theoretically correct return metric. A business creates value when its ROIC exceeds its Weighted Average Cost of Capital (WACC). Below WACC, it's destroying value even while reporting positive earnings.",
+        how:"Most valuable when compared to a rough cost of capital estimate (~8-12% for most businesses). ROIC consistently above 15% = genuine compounder. ROIC near or below cost of capital = value-destroying treadmill regardless of reported profit growth.",
+        example:"If a company earns 18% ROIC and its cost of capital is 10%, every rupee reinvested creates 80 paise of new value per rupee deployed. Over 10 years, compounded, this becomes the difference between a good business and a great one.",
+        trap:"Goodwill from acquisitions is often excluded from Invested Capital in 'cash ROIC' calculations — making it look higher than the economic reality. Both measures have their uses; just know which one you're looking at."},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 5: BALANCE SHEET — CAN IT SURVIVE?
+  ──────────────────────────────────────────────────────── */
+  { section:"Balance sheet — can it survive?",
+    items:[
+      { term:"Net debt / EBITDA",
+        what:"Net debt (total borrowings minus cash) ÷ EBITDA. How many years of operating profit it would take to repay all borrowings.",
+        why:"The most intuitive leverage measure. It standardises debt across different-sized businesses and tells you how burdensome the debt is relative to the business's earnings power.",
+        how:"0-1.5× = conservative, comfortable. 1.5-3× = moderate, manageable in normal conditions. 3-4× = elevated, limited room for error. Above 4× = high risk, business is highly vulnerable to a downturn or rate rise.",
+        example:"Reliance Industries has significant net debt but strong EBITDA — their debt/EBITDA has trended down as earnings grew. A company acquiring rapidly might spike to 4× debt/EBITDA before deleveraging over 3-4 years. The direction of travel matters as much as the current level.",
+        trap:"Capital-intensive businesses (utilities, infrastructure) can safely carry higher leverage because of stable, contracted revenues. Consumer cyclicals at 4× leverage are in trouble. Always calibrate to business stability, not a generic rule."},
+
+      { term:"Net cash / Net debt position",
+        what:"Cash and liquid investments minus all financial debt. Positive = net cash (assets exceed debt). Negative = net debt (debt exceeds cash).",
+        why:"A net cash company controls its own destiny. It can invest opportunistically, weather a downturn, buy back shares, or pay dividends without needing to borrow or dilute shareholders. A net debt company must service that debt regardless of business conditions.",
+        how:"Net cash is a quality signal that needs interpretation: great if being reinvested at high returns or returned to shareholders; wasteful if just accumulating in a bank account earning below the cost of equity.",
+        example:"Microsoft has net cash. During COVID and subsequent downturns, this let them make acquisitions (Activision, Nuance) while competitors retrenched. TCS has net cash — it's steadily returned it via dividends and buybacks over years.",
+        trap:"A company can hold 'cash' that's actually pledged as collateral for loans, or restricted (can't be repatriated from overseas without tax consequences). Read the footnotes before counting foreign cash at full face value."},
+
+      { term:"Promoter / Insider ownership",
+        what:"The percentage of the company's shares held by its founders, promoter group (India), or senior management (US/global). A measure of how much skin-in-the-game the people running the business actually have.",
+        why:"Insiders have information no outsider possesses. When they voluntarily increase their stake with their own money, it's one of the highest-conviction signals of confidence in the business's future that exists. When they reduce it, it warrants understanding why.",
+        how:"Look at the trend, not just the level. Rising stake = positive signal. Falling stake = needs an explanation. For Indian companies, promoter holding between 40-75% is typically healthy. Above 75% creates thin free float and governance risk. Below 30% may indicate diminishing founder commitment.",
+        example:"If an Indian promoter increases stake from 52% to 54% by open-market purchase during a market dip, that's meaningful signal — they chose to deploy their personal capital into their own company at that price. If a promoter is pledging shares (borrowing against them), that's the opposite signal even with high stated holding.",
+        trap:"Insider selling is not automatically bearish — could be diversification, estate planning, or tax-driven. Insider buying is almost always bullish because it's entirely voluntary and cash-cost. Weight buying signals more heavily than selling signals."},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 6: SIGNAL COMBINATIONS — WHAT THEY REVEAL TOGETHER
+  ──────────────────────────────────────────────────────── */
+  { section:"Signal combinations — what they reveal together",
+    items:[
+      { term:"Revenue ↑ + FCF ↓",
+        what:"Revenue growing, free cash flow declining simultaneously.",
+        why:"The most important divergence to catch early. Growth is consuming cash rather than generating it — the business model is either structurally cash-hungry, or something operational has changed.",
+        how:"Check the Cash Bridge on the tearsheet. Is the gap from capex (often defensible) or from operating cash flow (more concerning)? If OCF and FCF are both declining, working capital is the issue — growing receivables or inventory are common culprits.",
+        example:"A fast-growing e-commerce company spends heavily on warehouses and inventory to support growth. FCF is negative but OCF is positive and growing. That's an investment phase, not deterioration. But if OCF also declines while revenue grows, customers are paying slowly or returns are rising.",
+        trap:"One year of this is a data point. Three consecutive years is a structural pattern. Single-year capex cycles are common and normal. Multi-year FCF/revenue divergence is the real warning."},
+
+      { term:"High ROE + Low ROA",
+        what:"Return on equity looks strong, but return on total assets is thin.",
+        why:"The gap between ROE and ROA is precisely the leverage effect. Heavy borrowing amplifies a mediocre underlying return into an apparently impressive equity return — but it also amplifies downside.",
+        how:"For every percentage point of ROA gap below ROE, estimate how much is leverage-driven. A business with 20% ROE and 3% ROA is using roughly 7:1 leverage. Is that appropriate for the business model?",
+        example:"A retail chain with 18% ROE and 2.5% ROA: the real underlying return is thin, and the equity return depends on continuing to operate with significant lease and supplier credit leverage. Fine in a growing market, fragile in a downturn.",
+        trap:"Normal and expected for banks and regulated utilities — do not apply this flag to financial businesses. For non-financial companies, treat as a flag worth investigating."},
+
+      { term:"Falling insider stake + Declining fundamentals",
+        what:"Promoters or insiders reducing their stake while revenue, FCF, or margins are deteriorating.",
+        why:"Three independent negative signals reinforcing each other. The people with the best information about the business are leaving at the same time the business itself is weakening. This combination removes the benefit of the doubt entirely.",
+        how:"Verify whether the selling was open-market (most bearish), or a pledging/forced sale situation. A pledge call (lender selling shares pledged as collateral) may reflect personal liquidity issues rather than business outlook — still worth investigating.",
+        example:"If a promoter goes from 55% to 51% over four quarters while EBITDA margin contracts and FCF declines, it's a significant compound warning. If the same selling happened while fundamentals improved, it's much less concerning.",
+        trap:"Promoter selling alone is not always negative (see above). The combination with weakening fundamentals is what creates the compound signal."},
+
+      { term:"Low P/E + Declining revenue",
+        what:"A stock trading at a low multiple while its revenue is shrinking.",
+        why:"The classic value trap: statistically cheap, but the business is getting smaller. The low P/E may stay low or get lower because the E in P/E keeps declining. The multiple can look cheap all the way to zero.",
+        how:"Ask: what specifically has to be true for the revenue decline to reverse? Is there a concrete catalyst (new product, turnaround plan, cyclical recovery with a visible inflection)? Or is this structural decline with no clear end?",
+        example:"A traditional print media company trades at P/E 8. Revenues declining 10% per year. The P/E looks attractive until you project forward: at -10% revenue for 3 years, the earnings base shrinks by 27% and the P/E reverts to looking normal or expensive on that smaller base.",
+        trap:"Not all cheap-and-declining businesses are value traps. A cyclical business at the bottom of its cycle (chemicals, commodities) can look similar but recover strongly. The distinction is structural versus cyclical decline."},
+
+      { term:"EBITDA margin high + FCF margin low",
+        what:"Strong operating profit margin but weak free cash flow margin — a large gap between them.",
+        why:"The gap between EBITDA and FCF is depreciation + capex + working capital change. If EBITDA is high but FCF is low, one of these bridges is consuming the cash. This matters enormously for whether the earnings multiple is justified.",
+        how:"Check capex intensity (capex÷revenue). If capex is consistently 15-20% of revenue just to maintain the business, EBITDA is an inflated proxy for cash profit. Use FCF yield, not EBITDA yield, as your valuation anchor for such businesses.",
+        example:"A telecom company with 35% EBITDA margin sounds impressive. But 20% of revenue goes to network maintenance capex. FCF margin is actually 8-10% — much more modest, and the right basis for valuation.",
+        trap:"This doesn't mean high capex businesses are bad investments — it means you need to use the right metric (FCF yield) to value them, not the wrong one (EV/EBITDA), which ignores capex entirely."},
+
+      { term:"Revenue growing + Margins compressing",
+        what:"Top-line growth but declining profitability — the company is growing but getting less efficient.",
+        why:"Growing revenue with falling margins usually means one of three things: discounting to win share, rising input costs being absorbed, or heavy investment in sales/marketing ahead of future revenue. Each has a different implication.",
+        how:"Check gross margin first. If gross margin is stable but operating margin is falling, the cost pressure is in overhead or investment spending — possibly temporary. If gross margin is falling, the core pricing power is under pressure — harder to recover.",
+        example:"A consumer brand grows 12% revenue but gross margin falls 2 points as raw material costs rise. If management can push through price increases over the next 2 quarters, the margin recovers. If the category is too competitive for price increases, the erosion continues.",
+        trap:"Deliberate investment-phase margin compression (a company hiring 2,000 engineers ahead of a product launch) is very different from structural deterioration. Management's explanation matters — but so does whether they've been accurate in the past."},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 7: MACRO FACTORS — THE WATER LEVEL AFFECTS ALL BOATS
+  ──────────────────────────────────────────────────────── */
+  { section:"Macro factors — the water level affects all boats",
+    items:[
+      { term:"Interest rates & equity valuation",
+        what:"The relationship between the risk-free rate (government bond yield) and how stocks are priced.",
+        why:"Every stock is priced as its future cash flows discounted to present value. The discount rate is closely related to interest rates. When rates rise, future cash flows are worth less today — mechanically reducing intrinsic values. Long-duration businesses (high-growth tech with cash flows far in the future) are hit hardest.",
+        how:"When you raise the discount rate slider on the tearsheet, you're simulating rising rates. A stock that looks cheap at 8% discount rate and expensive at 12% is highly interest-rate sensitive. Stocks that look cheap at both rates have more genuine margin of safety.",
+        example:"A software company with most of its value in years 5-15 of projected cash flows sees a 25-30% drop in intrinsic value when rates rise from 5% to 8%. A mature bank with earnings mostly in the near term is much less affected (and actually benefits from the rate rise through wider spreads).",
+        trap:"Rate sensitivity works both ways — the companies most hurt by rising rates are the ones most helped by falling rates. Rising-rate environments aren't uniformly bad for all equities; they're very specifically bad for long-duration growth."},
+
+      { term:"Crude oil — the pass-through economy",
+        what:"Oil prices as an input cost driver that flows through to margins across multiple industries, often with a 1-2 quarter lag.",
+        why:"Crude is a direct input for paints (solvents, resins), tyres, plastics, fertilisers, aviation fuel, and freight. It's also an indirect input for anything manufactured or transported. A significant move in crude creates winners and losers that are predictable before quarterly results confirm it.",
+        how:"When crude falls: watch paints (Asian Paints, Berger), tyres (MRF, Balkrishna), airlines (IndiGo), logistics companies for margin tailwinds. When crude rises: these become headwinds; oil E&P companies (ONGC, Oil India) see revenue uplift. Margin impact typically shows in results 1-2 quarters after the price moves.",
+        example:"If crude falls from $90 to $70/bbl, a paint company's solvent costs drop meaningfully. In the next quarterly result, gross margin expands even if revenue is flat. Analysts who tracked crude's movement could predict the margin improvement before the results came out.",
+        trap:"Commodity prices are volatile and unpredictable. Don't overweight macro tailwinds/headwinds in isolation — pair them with the underlying quality of the business."},
+
+      { term:"Currency (INR/USD for Indian stocks)",
+        what:"The exchange rate between the Indian rupee and US dollar — the key currency pair for Indian IT exporters and commodity importers.",
+        why:"Indian IT companies (TCS, Infosys, Wipro, HCL) bill clients in dollars but pay most costs in rupees. A weaker rupee means the same dollar revenue translates to more rupees — a direct, mechanical margin benefit. Conversely, Indian companies that import crude, equipment, or electronics face higher rupee costs when the rupee weakens.",
+        how:"Approximate rule: a 5% rupee depreciation vs USD → ~1.5-2 percentage point tailwind to EBITDA margins for Indian IT exporters. For crude importers (Reliance's refining business, airlines), the same move is a corresponding headwind.",
+        example:"If USD/INR moves from ₹83 to ₹87 (5% depreciation), Infosys's dollar revenues convert to 5% more rupees with no change in the underlying business. If IT margins were 21%, they might expand to 22.5% from this alone.",
+        trap:"Many companies hedge their currency exposure — check whether the company actively hedges (in which case the immediate benefit is muted but volatility is reduced) or runs unhedged (full benefit/risk from currency moves)."},
+
+      { term:"VIX — the fear gauge",
+        what:"The CBOE Volatility Index, measuring the market's expectation of near-term equity volatility in the US — widely watched as a sentiment indicator.",
+        why:"High VIX = elevated fear, risk-off environment. In such periods, even fundamentally strong stocks often fall as investors sell indiscriminately. Low VIX = calm markets, where stock-specific factors dominate. Knowing the VIX level helps you interpret price moves: was it company-specific, or was everything falling?",
+        how:"VIX above 30 = significant stress, risk-off. 20-30 = elevated concern. 15-20 = normal range. Below 15 = complacency, stock-specific factors likely to dominate. In high-VIX environments, fundamental analysis can identify opportunities, but timing matters because everything can get cheaper still.",
+        example:"During March 2020, VIX spiked to 80+ and every stock fell regardless of quality. Companies with solid fundamentals recovered fastest once VIX normalized. If you were analyzing a company during peak VIX and it looked fundamentally sound, waiting for VIX to normalize before acting preserved capital while capturing most of the upside.",
+        trap:"Don't use VIX as a buy/sell signal on its own. Use it as context for interpreting price moves — was that 15% decline company-specific bad news, or was the whole market down 15%?"},
+    ]},
+
+  /* ────────────────────────────────────────────────────────
+     SECTION 8: THE PLAYBOOK PATTERNS — IN DEPTH
+  ──────────────────────────────────────────────────────── */
+  { section:"The playbook patterns — in depth",
+    items: PLAYBOOK.map(p=>({
+      term: p.name,
+      also: `Category: ${p.cat} · Formula: ${p.formula}`,
+      what: p.meaning,
+      why: p.read,
+      how: "Open the Playbook tab and click this pattern to see which stocks in your dataset match it right now. Then open each match's tearsheet for the full picture.",
+      example: "",
+      trap: ""
+    }))
+  },
+];
+
+function renderLearn(){
+  const sections = LEARN_CONTENT.map(s=>s.section);
+  const q = State.learnSearch.toLowerCase().trim();
+
+  // Filter items if searching
+  const filtered = LEARN_CONTENT.map(sec=>({
+    ...sec,
+    items: q ? sec.items.filter(item=>
+      item.term.toLowerCase().includes(q) ||
+      (item.also||"").toLowerCase().includes(q) ||
+      item.what.toLowerCase().includes(q) ||
+      item.why.toLowerCase().includes(q)
+    ) : sec.items
+  })).filter(sec=> sec.items.length>0 &&
+    (State.learnSection==="all" || sec.section===State.learnSection));
+
+  return `
+  <div class="secintro">
+    <h2>The Financial Intelligence Guide</h2>
+    <p>Every ratio, every signal, and every combination used in this dashboard — explained in plain English with worked examples, the reason it matters, and the trap to avoid. Read it as a course from top to bottom, or search for any specific concept.</p>
+  </div>
+
+  <div class="toolbar" style="margin-bottom:18px">
+    <input class="search" id="learnSearch" placeholder="Search any concept, ratio, or term…" value="${State.learnSearch}" style="max-width:320px"/>
+    <div class="seg" style="flex-wrap:wrap">
+      <button class="seg ${State.learnSection==='all'?'on':''}" data-learnsec="all">All</button>
+      ${sections.map(s=>`<button class="seg ${State.learnSection===s?'on':''}" data-learnsec="${s}">${s}</button>`).join("")}
+    </div>
+  </div>
+
+  ${filtered.length===0?`<p style="color:var(--dim);font-size:13px">No concepts match "${State.learnSearch}". Try a different term.</p>`:""}
+
+  ${filtered.map(sec=>`
+    <div style="margin-bottom:40px">
+      <div style="font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+        color:var(--accent);font-weight:700;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--accent)">
+        ${sec.section}
+      </div>
+      ${sec.items.map(item=>`
+        <div style="margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid var(--line)">
+
+          <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+            <span style="font-size:17px;font-weight:800;color:var(--ink)">${item.term}</span>
+            ${item.also?`<span style="font-size:11.5px;color:var(--dim);font-family:var(--mono)">${item.also}</span>`:""}
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:8px">
+
+            <div style="background:var(--accent-soft);border-radius:8px;padding:14px 16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                color:var(--accent);font-family:var(--mono);margin-bottom:6px">What it is</div>
+              <p style="font-size:13.5px;color:#0a3d32;line-height:1.6;margin:0">${item.what}</p>
+            </div>
+
+            <div style="background:#f8f4ff;border-radius:8px;padding:14px 16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                color:#6d3dd3;font-family:var(--mono);margin-bottom:6px">Why it matters</div>
+              <p style="font-size:13.5px;color:#2d1a5e;line-height:1.6;margin:0">${item.why}</p>
+            </div>
+
+            ${item.how?`
+            <div style="background:#fff9f0;border-radius:8px;padding:14px 16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                color:#b8860b;font-family:var(--mono);margin-bottom:6px">How to use it</div>
+              <p style="font-size:13.5px;color:#4a3800;line-height:1.6;margin:0">${item.how}</p>
+            </div>`:""}
+
+            ${item.example?`
+            <div style="background:#f0f6ff;border-radius:8px;padding:14px 16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                color:#2563eb;font-family:var(--mono);margin-bottom:6px">Worked example</div>
+              <p style="font-size:13px;color:#1a2c5e;line-height:1.6;margin:0">${item.example}</p>
+            </div>`:""}
+
+            ${item.trap?`
+            <div style="background:#fef3f0;border-radius:8px;padding:14px 16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                color:var(--warn);font-family:var(--mono);margin-bottom:6px">⚠ Common trap</div>
+              <p style="font-size:13px;color:#5e1a14;line-height:1.6;margin:0">${item.trap}</p>
+            </div>`:""}
+
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `).join("")}
+  <p class="hint" style="margin-top:10px">The Playbook Patterns section above is auto-generated from the live combinations — if you add new patterns to the Playbook, they automatically appear here too.</p>
+  `;
+}
+
 function renderWatchDrawer(){
   if(!State.showWatchlist) return "";
   const rows = computeRows().filter(s=>State.watchlist.includes(s.t));
@@ -823,13 +1263,111 @@ function renderWatchDrawer(){
   </div>`;
 }
 
+
+/* ============================================================
+   DECISION ENGINE UI — the analytical pyramid rendered:
+   quadrant map, pillar bars with evidence, cross-linkage verdict
+   cards, reasoning chain, confidence, and thesis monitors.
+   ============================================================ */
+function renderDecisionEngine(s){
+  const P = pillarScores(s);
+  const L = crossLinkages(s, P);
+  const D = decisionSynthesis(s, P, L, MACRO_DATA);
+  const open = State.decisionOpen;
+
+  // quadrant map: x = price attractiveness, y = quality
+  const px = 20 + (D.price/100)*160, py = 180 - (D.quality/100)*160;
+
+  return `
+  <div class="matrix" style="margin-top:16px;border-width:2px;border-color:${D.qColor}">
+    <div class="matrixhead" style="background:${D.qColor}10">
+      DECISION ENGINE · the full analytical pyramid
+      <span style="font-size:11px;color:var(--dim);font-weight:400">confidence: <b style="color:${D.confidence==='High'?'var(--good)':D.confidence==='Moderate'?'var(--neutral)':'var(--warn)'}">${D.confidence}</b></span>
+    </div>
+
+    <div style="padding:18px;display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start">
+      <div>
+        <svg viewBox="0 0 200 200" style="width:100%;max-width:220px;display:block">
+          <rect x="20" y="20" width="80" height="80" fill="#fdecea" opacity="0.6"/>
+          <rect x="100" y="20" width="80" height="80" fill="#e9f7f1" opacity="0.8"/>
+          <rect x="20" y="100" width="80" height="80" fill="#fdecea" opacity="0.9"/>
+          <rect x="100" y="100" width="80" height="80" fill="#fbf3e0" opacity="0.8"/>
+          <line x1="100" y1="20" x2="100" y2="180" stroke="#ccc" stroke-width="0.7"/>
+          <line x1="20" y1="100" x2="180" y2="100" stroke="#ccc" stroke-width="0.7"/>
+          <text x="60" y="15" text-anchor="middle" font-size="7" fill="#888">EXPENSIVE</text>
+          <text x="140" y="15" text-anchor="middle" font-size="7" fill="#888">CHEAP</text>
+          <text x="12" y="60" text-anchor="middle" font-size="7" fill="#888" transform="rotate(-90 12 60)">HIGH QUALITY</text>
+          <text x="12" y="140" text-anchor="middle" font-size="7" fill="#888" transform="rotate(-90 12 140)">LOW QUALITY</text>
+          <text x="140" y="55" text-anchor="middle" font-size="6.5" fill="#1a8a63" font-weight="bold">PRIME</text>
+          <text x="60" y="55" text-anchor="middle" font-size="6.5" fill="#b8860b" font-weight="bold">WATCHLIST</text>
+          <text x="140" y="145" text-anchor="middle" font-size="6.5" fill="#b8860b" font-weight="bold">TRAP RISK</text>
+          <text x="60" y="145" text-anchor="middle" font-size="6.5" fill="#c0392b" font-weight="bold">AVOID</text>
+          <circle cx="${px}" cy="${py}" r="7" fill="${D.qColor}" stroke="#fff" stroke-width="2"/>
+          <text x="${px}" y="${py+2.5}" text-anchor="middle" font-size="6" fill="#fff" font-weight="bold">●</text>
+        </svg>
+        <div style="text-align:center;margin-top:8px">
+          <div style="font-weight:800;font-size:14px;color:${D.qColor}">${D.quadrant}</div>
+          <div style="font-size:11px;color:var(--dim);font-family:var(--mono)">Quality ${D.quality} · Price ${D.price}</div>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size:15px;font-weight:700;margin:0 0 6px">${D.headline}</p>
+        <p style="font-size:13px;color:#333;line-height:1.6;margin:0 0 12px">${D.guidance}</p>
+        <div style="font-size:11px;letter-spacing:.5px;color:var(--dim);font-weight:700;margin-bottom:6px">WHY IT LANDS HERE</div>
+        ${D.reasoning.map(r=>`<p style="font-size:12.5px;color:#444;margin:0 0 5px;line-height:1.5">· ${r}</p>`).join("")}
+        <p style="font-size:11.5px;color:var(--dim);margin:10px 0 0;font-style:italic">${D.confNote}</p>
+      </div>
+    </div>
+
+    <div style="padding:0 18px 6px">
+      <button class="learntoggle" data-decision="pillars">${open==='pillars'?'▾':'▸'} Level 2 — Pillar scores &amp; evidence (8)</button>
+      <button class="learntoggle" data-decision="linkages" style="margin-left:6px">${open==='linkages'?'▾':'▸'} Level 3 — Cross-linkages (${L.length})</button>
+      <button class="learntoggle" data-decision="monitors" style="margin-left:6px">${open==='monitors'?'▾':'▸'} Level 5 — What would change this verdict</button>
+    </div>
+
+    ${open==='pillars'?`
+    <div style="padding:8px 18px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px">
+      ${Object.values(P).map(p=>`
+        <div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-weight:700;font-size:13px">${p.name}</span>
+            <span style="font-weight:800;font-size:13px;color:${p.color}">${p.score} · ${p.verdict}</span>
+          </div>
+          <div class="defbar" style="width:100%"><div class="deffill" style="width:${p.score}%;background:${p.color}"></div></div>
+          <div style="margin-top:8px">
+            ${p.evidence.map(e=>`<p style="font-size:11.5px;margin:3px 0;color:${e.pts>0?'var(--good)':e.pts<0?'var(--warn)':'var(--dim)'}">${e.pts>0?'▲':e.pts<0?'▼':'•'} ${e.txt}</p>`).join("")}
+          </div>
+        </div>`).join("")}
+    </div>`:''}
+
+    ${open==='linkages'?`
+    <div style="padding:8px 18px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px">
+      ${L.map(l=>`
+        <div style="border:1px solid var(--line);border-left:4px solid ${l.color};border-radius:8px;padding:12px 14px">
+          <div style="font-size:10px;letter-spacing:.5px;color:var(--dim);font-family:var(--mono);text-transform:uppercase">${l.a} × ${l.b}</div>
+          <div style="font-weight:700;font-size:13px;margin:3px 0">${l.question}</div>
+          <div style="font-weight:800;font-size:13.5px;color:${l.color};margin-bottom:6px">→ ${l.verdict}</div>
+          <p style="font-size:12px;color:#444;line-height:1.5;margin:0 0 6px">${l.insight}</p>
+          <p style="font-size:11.5px;color:var(--accent);line-height:1.5;margin:0"><b>Next step:</b> ${l.action}</p>
+        </div>`).join("")}
+    </div>`:''}
+
+    ${open==='monitors'?`
+    <div style="padding:8px 18px 18px">
+      <p style="font-size:12px;color:var(--dim);margin:0 0 10px">These are the metrics currently closest to a verdict boundary — the specific things that would move this stock to a different quadrant if they change:</p>
+      ${D.monitors.map(m=>`<div style="border:1px solid var(--line);border-radius:8px;padding:11px 14px;margin-bottom:8px;font-size:12.5px;color:#333;line-height:1.55">⚑ ${m}</div>`).join("")}
+    </div>`:''}
+  </div>`;
+}
+
 function render(){
   const root = document.getElementById("root");
   root.innerHTML = `
     ${renderHeader()}
     <div class="wrap">
       ${renderWatchDrawer()}
-      ${State.tab==="sectors" ? renderSectors() : State.tab==="compare" ? renderCompare() : (State.sel ? renderTearsheet(State.sel) : renderScreener())}
+      ${State.tab==="sectors" ? renderSectors() : State.tab==="compare" ? renderCompare() : State.tab==="playbook" ? renderPlaybook() : State.tab==="learn" ? renderLearn() : (State.sel ? renderTearsheet(State.sel) : renderScreener())}
     </div>
   `;
   wireEvents();
@@ -884,6 +1422,21 @@ function wireEvents(){
 
   root.querySelectorAll("[data-driver]").forEach(el=>el.onclick=()=>{State.driverDir[el.dataset.driver]=el.dataset.dir;render();});
   root.querySelectorAll("[data-phase]").forEach(el=>el.onclick=()=>{State.phase=+el.dataset.phase;render();});
+
+  root.querySelectorAll("[data-pbcat]").forEach(el=>el.onclick=()=>{State.playbookCat=el.dataset.pbcat;render();});
+  root.querySelectorAll("[data-pbtoggle]").forEach(el=>el.onclick=()=>{
+    State.playbookOpen = State.playbookOpen===el.dataset.pbtoggle ? null : el.dataset.pbtoggle;
+    render();
+  });
+
+  root.querySelectorAll("[data-decision]").forEach(el=>el.onclick=()=>{
+    State.decisionOpen = State.decisionOpen===el.dataset.decision ? null : el.dataset.decision;
+    render();
+  });
+
+  root.querySelectorAll("[data-learnsec]").forEach(el=>el.onclick=()=>{State.learnSection=el.dataset.learnsec;render();});
+  const learnSearch=document.getElementById("learnSearch");
+  if(learnSearch){ learnSearch.oninput=e=>{State.learnSearch=e.target.value;render();}; }
 }
 
 render();
