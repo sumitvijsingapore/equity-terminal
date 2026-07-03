@@ -388,3 +388,188 @@ function takeaway(s){
                s.verdict.l==="Caution" ? "several caution flags" : "a mixed picture";
   return `${s.n} is ${lead} — ${tone}.`;
 }
+
+/* ============================================================
+   DECISION ENGINE — the analytical pyramid.
+   Level 2: 8 pillar scores (0-100) each with an evidence chain.
+   Level 3: 8 cross-linkages, each a derived verdict from two pillars.
+   Level 4: synthesis into a Quality × Price quadrant with explicit
+            reasoning and a confidence level.
+   Level 5: thesis monitors — what would change the verdict.
+   ============================================================ */
+
+function _mkPillar(name, base, evidence){
+  let score = base;
+  evidence.forEach(e=>{ score += e.pts; });
+  score = Math.round(Math.max(0, Math.min(100, score)));
+  const verdict = score>=65?"Strong":score>=45?"Adequate":"Weak";
+  const color = score>=65?"#1a8a63":score>=45?"#b8860b":"#c0392b";
+  return {name, score, verdict, color, evidence};
+}
+const _ev = (txt, pts)=>({txt, pts});
+
+function pillarScores(s){
+  const P = {};
+  { const e=[];
+    if(s.revG!=null){ if(s.revG>15)e.push(_ev(`Revenue growing ${s.revG.toFixed(0)}% YoY`,15)); else if(s.revG>5)e.push(_ev(`Revenue growing ${s.revG.toFixed(0)}% YoY`,8)); else if(s.revG>0)e.push(_ev(`Revenue up modestly (${s.revG.toFixed(1)}%)`,2)); else e.push(_ev(`Revenue declining (${s.revG.toFixed(1)}%)`,-15)); }
+    if(s.revCagr!=null){ if(s.revCagr>12)e.push(_ev(`3yr revenue CAGR ${s.revCagr.toFixed(0)}% — sustained, not one-off`,8)); else if(s.revCagr<0)e.push(_ev(`3yr revenue CAGR negative — multi-year shrinkage`,-10)); }
+    if(s.revDecel!=null && s.revDecel<-5)e.push(_ev(`Growth decelerating ${Math.abs(s.revDecel).toFixed(0)}pts vs prior year`,-10));
+    if(s.revDecel!=null && s.revDecel>3)e.push(_ev(`Growth accelerating vs prior year`,8));
+    if(s.fcfG!=null && s.fcfG>10)e.push(_ev(`FCF growing ${s.fcfG.toFixed(0)}% alongside revenue`,7));
+    P.growth = _mkPillar("Growth", 50, e); }
+  { const e=[];
+    if(s.emNow!=null){ if(s.emNow>30)e.push(_ev(`EBITDA margin ${s.emNow.toFixed(0)}% — premium profitability`,12)); else if(s.emNow>15)e.push(_ev(`EBITDA margin ${s.emNow.toFixed(0)}% — healthy`,5)); else e.push(_ev(`EBITDA margin ${s.emNow.toFixed(0)}% — thin`,-8)); }
+    if(s.opMarginTrend!=null){ if(s.opMarginTrend>1.5)e.push(_ev(`Operating margin expanding ${s.opMarginTrend.toFixed(1)}pts — operating leverage`,12)); else if(s.opMarginTrend<-1.5)e.push(_ev(`Operating margin compressing ${Math.abs(s.opMarginTrend).toFixed(1)}pts`,-12)); }
+    if(s.marginTrend!=null && s.marginTrend<-1 && s.revG!=null && s.revG>0)e.push(_ev(`Net margin falling while revenue grows — buying growth`,-8));
+    P.profitability = _mkPillar("Profitability", 50, e); }
+  { const e=[];
+    if(s.fcfNi!=null){ if(s.fcfNi>=1.1)e.push(_ev(`FCF exceeds net income (${s.fcfNi.toFixed(2)}×) — profit fully cash-backed`,18)); else if(s.fcfNi>=0.9)e.push(_ev(`FCF ≈ net income (${s.fcfNi.toFixed(2)}×) — sound conversion`,10)); else if(s.fcfNi>=0.7)e.push(_ev(`FCF only ${(s.fcfNi*100).toFixed(0)}% of profit — moderate gap`,-8)); else e.push(_ev(`FCF just ${(s.fcfNi*100).toFixed(0)}% of reported profit — earnings quality concern`,-18)); }
+    if(s.fcfYield!=null && s.fcfYield>6)e.push(_ev(`FCF yield ${s.fcfYield.toFixed(1)}% — substantial cash return`,8));
+    if(s.capexIntensity!=null && s.capexIntensity>15)e.push(_ev(`Capex is ${s.capexIntensity.toFixed(0)}% of revenue — capital-hungry model`,-6));
+    if(s.revG!=null&&s.revG>8 && s.fcfG!=null&&s.fcfG<0)e.push(_ev(`Revenue up but FCF down — growth consuming cash`,-12));
+    P.cashQuality = _mkPillar("Cash quality", 50, e); }
+  { const e=[];
+    if(s.debt<0)e.push(_ev(`Net cash position — no financial fragility`,18));
+    else if(s.debtToEbitda!=null){ if(s.debtToEbitda<1.5)e.push(_ev(`Net debt only ${s.debtToEbitda.toFixed(1)}× EBITDA — conservative`,10)); else if(s.debtToEbitda<3)e.push(_ev(`Net debt ${s.debtToEbitda.toFixed(1)}× EBITDA — manageable`,0)); else if(s.debtToEbitda<4)e.push(_ev(`Net debt ${s.debtToEbitda.toFixed(1)}× EBITDA — elevated`,-12)); else e.push(_ev(`Net debt ${s.debtToEbitda.toFixed(1)}× EBITDA — high risk`,-20)); }
+    if(s.debtToEbitda!=null&&s.debtToEbitda>3 && s.fcfG!=null&&s.fcfG<0)e.push(_ev(`High leverage while cash flow shrinks — compounding fragility`,-10));
+    P.balanceSheet = _mkPillar("Balance sheet", 50, e); }
+  { const e=[];
+    const isFin = s.sec==="Financial Services"||s.sec==="Fin";
+    if(s.roe!=null){ if(s.roe>25)e.push(_ev(`ROE ${s.roe.toFixed(0)}% — exceptional returns on equity`,15)); else if(s.roe>15)e.push(_ev(`ROE ${s.roe.toFixed(0)}% — strong`,8)); else if(s.roe<8)e.push(_ev(`ROE ${s.roe.toFixed(0)}% — below typical cost of capital`,-12)); }
+    if(!isFin && s.roe!=null&&s.roe>15 && s.roa!=null&&s.roa<3 && s.debt>0)e.push(_ev(`ROE/ROA gap — returns are leverage-driven, not operational`,-12));
+    if(s.roa!=null && s.roa>10 && !isFin)e.push(_ev(`ROA ${s.roa.toFixed(0)}% — assets genuinely productive`,8));
+    P.returns = _mkPillar("Returns on capital", 50, e); }
+  { const e=[];
+    if(s.mos!=null){ if(s.mos>25)e.push(_ev(`Trading ${s.mos.toFixed(0)}% below DCF value — wide margin of safety`,15)); else if(s.mos>10)e.push(_ev(`Trading ${s.mos.toFixed(0)}% below DCF value`,8)); else if(s.mos<-25)e.push(_ev(`Trading ${Math.abs(s.mos).toFixed(0)}% above DCF value — priced for perfection`,-15)); else if(s.mos<-10)e.push(_ev(`Trading ${Math.abs(s.mos).toFixed(0)}% above DCF value`,-8)); }
+    if(s.peg!=null){ if(s.peg<1)e.push(_ev(`PEG ${s.peg.toFixed(2)} — not overpaying for growth`,10)); else if(s.peg>2.5)e.push(_ev(`PEG ${s.peg.toFixed(2)} — paying richly for growth`,-8)); }
+    if(s.fcfYield!=null){ if(s.fcfYield>5)e.push(_ev(`FCF yield ${s.fcfYield.toFixed(1)}% — cash return competitive with bonds`,8)); else if(s.fcfYield<2)e.push(_ev(`FCF yield ${s.fcfYield.toFixed(1)}% — thin cash return at this price`,-8)); }
+    P.valuation = _mkPillar("Valuation", 50, e); }
+  { const e=[];
+    if(s.insiderTrend!=null){ if(s.insiderTrend>1)e.push(_ev(`Insider/promoter stake rising ${s.insiderTrend.toFixed(1)}pts — conviction with their own money`,18)); else if(s.insiderTrend<-1)e.push(_ev(`Insider/promoter stake falling ${Math.abs(s.insiderTrend).toFixed(1)}pts`,-12)); }
+    if(s.insiderPct!=null){ if(s.insiderPct>40&&s.insiderPct<=75)e.push(_ev(`${s.insiderPct.toFixed(0)}% insider held — strong alignment`,8)); else if(s.insiderPct<5)e.push(_ev(`Only ${s.insiderPct.toFixed(1)}% insider held — weak alignment`,-5)); }
+    if(!e.length)e.push(_ev(`No ownership trend data yet (builds after two data refreshes)`,0));
+    P.ownership = _mkPillar("Ownership", 50, e); }
+  { const e=[];
+    if(s.pricePos!=null){ if(s.pricePos>75)e.push(_ev(`Near 52wk high (${s.pricePos.toFixed(0)}%) — market already recognizes the story`,3)); else if(s.pricePos<25)e.push(_ev(`Near 52wk low (${s.pricePos.toFixed(0)}%) — market pessimism priced in`,3)); }
+    if(s.pricePos!=null&&s.pricePos<25 && s.revG!=null&&s.revG>0 && s.fcfNi!=null&&s.fcfNi>=0.9)e.push(_ev(`Price weak but fundamentals sound — price/fundamentals divergence`,10));
+    if(s.pricePos!=null&&s.pricePos>85 && s.revDecel!=null&&s.revDecel<0)e.push(_ev(`Price at highs while growth decelerates — momentum outrunning fundamentals`,-10));
+    if(s.revQ!=null&&s.niQ!=null&&s.revQ>2&&s.niQ>s.revQ*1.5)e.push(_ev(`Latest quarter profit outpacing sales — early positive inflection`,8));
+    P.momentum = _mkPillar("Momentum", 50, e); }
+  return P;
+}
+
+function crossLinkages(s, P){
+  const L=[];
+  const add=(name, question, a, b, verdict, color, insight, action)=>
+    L.push({name, question, a, b, verdict, color, insight, action});
+
+  { const g=P.growth.score, c=P.cashQuality.score;
+    if(g>=60&&c>=60)add("Growth reality check","Is the reported growth real?","Growth","Cash quality","Real growth","#1a8a63","Revenue growth is backed by matching cash generation — the growth is genuine, not an accounting artifact.","This combination compounds. The main question shifts to price, not quality.");
+    else if(g>=60&&c<45)add("Growth reality check","Is the reported growth real?","Growth","Cash quality","Growth mirage risk","#c0392b","Growth looks strong on paper but cash isn't following — receivables, inventory, or capex are absorbing it.","Check the Revenue-vs-FCF chart. If the gap persists 3+ quarters, treat reported growth with skepticism.");
+    else if(g<45&&c>=60)add("Growth reality check","Is the reported growth real?","Growth","Cash quality","Cash-rich but stalled","#b8860b","Converts profit to cash superbly, but the top line isn't growing. A cash cow, not a compounder.","Value it on FCF yield like a bond, not growth multiples. Check what management does with the cash.");
+    else add("Growth reality check","Is the reported growth real?","Growth","Cash quality","Both weak","#c0392b","Neither growth nor cash conversion is working — the core engine is struggling.","Requires a specific turnaround catalyst to be interesting. Absent one, look elsewhere."); }
+
+  { const g=P.growth.score, v=P.valuation.score;
+    if(g>=60&&v>=60)add("Price of growth","Are you paying fairly for the growth?","Growth","Valuation","GARP setup","#1a8a63","Genuine growth available at a reasonable or discounted price — the rare overlap markets usually close quickly.","Ask what the market is worried about that the numbers don't show. If nothing structural, this is the priority setup.");
+    else if(g>=60&&v<45)add("Price of growth","Are you paying fairly for the growth?","Growth","Valuation","Growth fully priced","#b8860b","Real growth, but the market has already paid itself for years of it — upside needs beating high expectations.","Wait-for-price candidate. Star it; act on a broad selloff that drags it down indiscriminately.");
+    else if(g<45&&v>=60)add("Price of growth","Are you paying fairly for the growth?","Growth","Valuation","Cheap for a reason?","#b8860b","Statistically cheap, but the growth engine is weak — the discount may be deserved.","Distinguish cyclical trough (recoverable) from structural decline (value trap).");
+    else add("Price of growth","Are you paying fairly for the growth?","Growth","Valuation","Expensive stagnation","#c0392b","Paying a premium for a business that isn't growing — the worst quadrant of this pairing.","Hard to justify without a very specific catalyst thesis."); }
+
+  { const p=P.profitability.score, g=P.growth.score;
+    if(p>=60&&g>=60)add("Scale economics","Does growing make it more profitable?","Profitability","Growth","Operating leverage engine","#1a8a63","Margins expanding while revenue grows — each new unit of revenue is more profitable than the last.","The most powerful compounding pattern. Check how much runway remains before margins normalize.");
+    else if(p<45&&g>=60)add("Scale economics","Does growing make it more profitable?","Profitability","Growth","Buying growth","#b8860b","Revenue is growing but margins are being sacrificed to get it — discounting or cost absorption.","Check gross margin: stable gross + falling operating margin = investment phase; falling gross = pricing power erosion.");
+    else if(p>=60&&g<45)add("Scale economics","Does growing make it more profitable?","Profitability","Growth","Profitable but static","#b8860b","Strong margins with little growth — a well-run business in a mature market.","Fine as a stability holding at the right price. Beware paying growth multiples for it.");
+    else add("Scale economics","Does growing make it more profitable?","Profitability","Growth","Struggling on both","#c0392b","Neither growing nor particularly profitable.","Needs a fundamental business change, not just a cheap price, to be interesting."); }
+
+  { const b=P.balanceSheet.score, g=P.growth.score;
+    if(b>=60&&g>=60)add("Growth funding","Who is funding the growth?","Balance sheet","Growth","Self-funded growth","#1a8a63","Growing from its own cash generation without leaning on debt — immune to credit conditions.","Structurally the safest growth. This combination deserves a durability premium.");
+    else if(b<45&&g>=60)add("Growth funding","Who is funding the growth?","Balance sheet","Growth","Borrowed growth","#c0392b","The growth is running on leverage — works while conditions are good, punishing when rates rise or demand dips.","Check the Macro panel for rate direction — this combination is most vulnerable to a tightening cycle.");
+    else if(b>=60&&g<45)add("Growth funding","Who is funding the growth?","Balance sheet","Growth","Fortress without ambition","#b8860b","Rock-solid balance sheet but the capital isn't producing growth — possibly under-deployed.","Watch capital allocation: buybacks/dividends at fair prices are fine; idle cash is value slowly leaking.");
+    else add("Growth funding","Who is funding the growth?","Balance sheet","Growth","Weak and constrained","#c0392b","Leveraged and not growing — the debt limits every strategic option.","The balance sheet has to be repaired before the equity story can work."); }
+
+  { const r=P.returns.score, b=P.balanceSheet.score;
+    const isFin = s.sec==="Financial Services"||s.sec==="Fin";
+    if(isFin)add("Return authenticity","Are the returns real or leverage?","Returns","Balance sheet","Financial-sector norm","#b8860b","Banks and financials run on leverage by design — the ROE/ROA gap is expected here, not a warning.","Judge financials on ROA (>1% is sound), asset quality, and capital ratios instead.");
+    else if(r>=60&&b>=60)add("Return authenticity","Are the returns real or leverage?","Returns","Balance sheet","Genuine quality","#1a8a63","High returns earned without leaning on debt — the returns come from the business itself.","This is what a durable competitive advantage looks like in the numbers.");
+    else if(r>=60&&b<45)add("Return authenticity","Are the returns real or leverage?","Returns","Balance sheet","Leverage-assisted returns","#b8860b","Returns look strong but significant debt is amplifying them — the underlying return is more modest.","Mentally discount the ROE. Stress-test: what happens if borrowing costs rise 2 points?");
+    else add("Return authenticity","Are the returns real or leverage?","Returns","Balance sheet","Weak returns","#c0392b","Returns on capital are below what the risk justifies.","Capital is being consumed rather than compounded here."); }
+
+  { const v=P.valuation.score, m=P.momentum.score;
+    if(v>=60&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Recognized value","#1a8a63","Undervalued on fundamentals AND price action has started confirming — the market may be catching on.","Often the best entry window: the discount exists but the downtrend has stopped.");
+    else if(v>=60&&m<45)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Falling knife or hidden gem","#b8860b","Cheap on fundamentals but the market keeps selling — someone disagrees with the numbers.","Do NOT assume the market is wrong. Check recent news and whether insiders are buying the dip before acting.");
+    else if(v<45&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Momentum-carried","#b8860b","Price strength without valuation support — running on narrative and flows.","Can continue longer than seems rational, but risk/reward is asymmetric. Size accordingly if at all.");
+    else add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","No support either way","#c0392b","Neither cheap nor showing positive price behavior.","No edge visible from either angle right now."); }
+
+  { const o=P.ownership.score;
+    const fundAvg=(P.growth.score+P.cashQuality.score)/2;
+    if(o>=60&&fundAvg>=55)add("Insider confirmation","Do insiders confirm what the numbers say?","Ownership","Fundamentals","Insiders confirm","#1a8a63","The people with the best information are increasing their stake while fundamentals genuinely improve — independent confirmation.","One of the highest-conviction combinations this dashboard can surface.");
+    else if(o<45&&fundAvg<45)add("Insider confirmation","Do insiders confirm what the numbers say?","Ownership","Fundamentals","Insiders + numbers both negative","#c0392b","Insiders reducing stake while fundamentals deteriorate — two independent negative signals agreeing.","The benefit of the doubt is gone. Treat any bull thesis here with heavy skepticism.");
+    else if(o>=60&&fundAvg<45)add("Insider confirmation","Do insiders confirm what the numbers say?","Ownership","Fundamentals","Insiders see something","#b8860b","Fundamentals look weak but insiders are buying anyway — they may see a turn the numbers don't show yet.","Insider buying into weakness is historically one of the better contrarian signals. Worth finding what they see.");
+    else add("Insider confirmation","Do insiders confirm what the numbers say?","Ownership","Fundamentals","No insider signal","#b8860b","No meaningful ownership signal in either direction (or data still accumulating).","Neutral — rely on the other linkages."); }
+
+  { const c=P.cashQuality.score, v=P.valuation.score;
+    if(c>=60&&v>=60)add("Yield authenticity","Is the cash yield at this price real?","Cash quality","Valuation","Real yield, fair price","#1a8a63","Strong genuine cash generation available at a price that makes the yield meaningful.","Compare the FCF yield against the 10yr bond — the spread is your compensation for equity risk, backed by real cash.");
+    else if(c<45&&v>=60)add("Yield authenticity","Is the cash yield at this price real?","Cash quality","Valuation","Paper cheap","#c0392b","Looks cheap on earnings multiples, but earnings aren't converting to cash — the cheapness is partly an illusion.","Re-value using FCF yield instead of P/E. Many 'cheap' stocks stop looking cheap on this basis.");
+    else if(c>=60&&v<45)add("Yield authenticity","Is the cash yield at this price real?","Cash quality","Valuation","Quality, fully priced","#b8860b","The cash generation is real but you're paying a full price for it.","The business is fine; the entry point is the problem. Patience is the position.");
+    else add("Yield authenticity","Is the cash yield at this price real?","Cash quality","Valuation","Neither","#c0392b","Weak cash conversion and no valuation cushion.","No margin of safety from either direction."); }
+
+  return L;
+}
+
+function decisionSynthesis(s, P, L, macro){
+  const quality0 = Math.round(
+    P.growth.score*0.20 + P.profitability.score*0.20 + P.cashQuality.score*0.25 +
+    P.balanceSheet.score*0.15 + P.returns.score*0.20 );
+  const price = P.valuation.score;
+
+  let qMod=0, notes=[];
+  if(P.ownership.score>=65){ qMod+=4; notes.push("Insider conviction adds confidence to the quality read."); }
+  if(P.ownership.score<40){ qMod-=4; notes.push("Insider selling subtracts confidence from the quality read."); }
+  const m = macro ? macroRead(s, macro) : null;
+  if(m && m.score>=2) notes.push("Current macro backdrop is a tailwind for this sector — flatters near-term results.");
+  if(m && m.score<=-2) notes.push("Current macro backdrop is a headwind — near-term results face external pressure regardless of quality.");
+  const quality = Math.max(0,Math.min(100, quality0+qMod));
+
+  const hiQ = quality>=58, hiP = price>=58;
+  let quadrant, qColor, headline, guidance;
+  if(hiQ&&hiP){ quadrant="PRIME CANDIDATE"; qColor="#1a8a63";
+    headline="High business quality at an attractive price — the rare overlap.";
+    guidance="This is the setup worth your deepest work. Run the full Stage 3 deep-dive (see tutorial), read the bear case via Ask Claude, and ask what the market is worried about. If nothing structural emerges, this is as good as screening gets."; }
+  else if(hiQ&&!hiP){ quadrant="QUALITY WATCHLIST"; qColor="#b8860b";
+    headline="A business worth owning, at a price worth waiting on.";
+    guidance="Star it. The business does the compounding; your job is the entry. Broad selloffs that drag everything down indiscriminately are when these become buyable."; }
+  else if(!hiQ&&hiP){ quadrant="TRAP-RISK VALUE"; qColor="#b8860b";
+    headline="Statistically cheap, but the business itself is questionable.";
+    guidance="Cheapness alone is not a thesis. This only works with a specific, identifiable catalyst (new management, cycle turn, restructuring). Name the catalyst explicitly before acting — if you can't, pass."; }
+  else { quadrant="AVOID FOR NOW"; qColor="#c0392b";
+    headline="Neither the quality nor the price argues for your capital.";
+    guidance="No edge here from any angle the dashboard measures. Your time is better spent on the other quadrants — revisit only if something material changes."; }
+
+  const scores=[P.growth.score,P.profitability.score,P.cashQuality.score,P.balanceSheet.score,P.returns.score];
+  const nonNullMetrics=[s.revG,s.fcfG,s.fcfNi,s.roe,s.mos,s.pe,s.emNow].filter(v=>v!=null).length;
+  const mean=scores.reduce((a,b)=>a+b,0)/scores.length;
+  const spread=Math.sqrt(scores.reduce((a,b)=>a+(b-mean)**2,0)/scores.length);
+  const confidence = nonNullMetrics>=6 && spread<15 ? "High" : nonNullMetrics>=5 ? "Moderate" : "Low";
+  const confNote = confidence==="High" ? "Data is complete and the pillars broadly agree."
+    : confidence==="Moderate" ? (spread>=15?"Pillars disagree meaningfully — the mixed picture is itself the finding.":"Some metrics unavailable; read the pillar detail before leaning on the quadrant.")
+    : "Significant data gaps — treat this placement as provisional.";
+
+  const coreP=[P.growth,P.profitability,P.cashQuality,P.balanceSheet,P.returns];
+  const sorted=[...coreP].sort((a,b)=>b.score-a.score);
+  const strongest=sorted[0], weakest=sorted[sorted.length-1];
+  const reasoning=[
+    `Business quality scores ${quality}/100 — driven most by ${strongest.name.toLowerCase()} (${strongest.score}), held back most by ${weakest.name.toLowerCase()} (${weakest.score}).`,
+    `Price attractiveness scores ${price}/100 — ${price>=58?"the market is offering a discount to estimated value":"the market is charging a full or premium price"}.`,
+    ...notes,
+  ];
+
+  const monitors=[];
+  if(s.fcfNi!=null&&s.fcfNi>=0.7&&s.fcfNi<1.0)monitors.push("FCF/Net income sits in the caution band — if next results push it below 0.7, the cash-quality pillar flips negative.");
+  if(s.revDecel!=null&&Math.abs(s.revDecel)<7)monitors.push("Growth trajectory is near an inflection — watch whether next quarter's growth accelerates or keeps fading.");
+  if(s.debtToEbitda!=null&&s.debtToEbitda>2&&s.debtToEbitda<3.5)monitors.push("Leverage is in the middle band — a weak EBITDA quarter would push net debt/EBITDA into the danger zone.");
+  if(s.mos!=null&&Math.abs(s.mos)<15)monitors.push("Price sits near estimated intrinsic value — modest moves either way change the valuation verdict.");
+  if(s.insiderTrend!=null)monitors.push(`Insider stake trend (currently ${s.insiderTrend>0?"rising":"falling"}) — a reversal would ${s.insiderTrend>0?"remove a key support of":"add support to"} the current read.`);
+  if(!monitors.length)monitors.push("No metrics are near a verdict boundary — the current read is stable unless results surprise.");
+
+  return {quality, price, quadrant, qColor, headline, guidance, confidence, confNote, reasoning, monitors:monitors.slice(0,3)};
+}
