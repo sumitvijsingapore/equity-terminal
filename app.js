@@ -27,7 +27,9 @@ const State = {
   playbookOpen: null,
   learnSection: "all",
   learnSearch: "",
-  decisionOpen: null,
+  decisionOpen: "pillars",
+  veteranOpen: null,
+  veteranView: "sector",
 };
 
 function saveWatchlist(){ localStorage.setItem("terminal_watchlist", JSON.stringify(State.watchlist)); }
@@ -118,6 +120,7 @@ function renderHeader(){
         <button data-tab="compare" class="${State.tab==='compare'?'on':''}">Compare${State.compare.length?` (${State.compare.length})`:''}</button>
         <button data-tab="playbook" class="${State.tab==='playbook'?'on':''}">Playbook</button>
         <button data-tab="learn" class="${State.tab==='learn'?'on':''}">Learn</button>
+        <button data-tab="veteran" class="${State.tab==='veteran'?'on':''}">Veteran's Lens</button>
       </div>
       <button class="watchbtn" id="watchToggle">★ Watchlist (${State.watchlist.length})</button>
       <span class="livebadge ${State.live?'live':'sample'}">${State.live?'● LIVE · YAHOO':'● SAMPLE DATA'} · ${State.data.length} names</span>
@@ -1361,13 +1364,134 @@ function renderDecisionEngine(s){
   </div>`;
 }
 
+
+/* ============================================================
+   VETERAN'S LENS TAB — six assessments a 50-year investor uses
+   that standard screeners never show, ranked across the universe.
+   ============================================================ */
+const VETERAN_LENSES=[
+  ["steadiness","1. Steadiness over flash","Consistency of results is worth more than their level. A business earning a steady 15% beats one oscillating 5%→30% — because you can actually hold, size, and compound the steady one. Screeners rank the average; veterans rank the variance."],
+  ["incremental","2. Incremental economics","Not \"what is the margin\" but \"what margin did the LAST dollar of revenue arrive at?\" Improving marginal economics precede reported margin expansion by years — it is the future arriving early, visible only if you compute it."],
+  ["impliedGrowth","3. What the price already assumes","Invert the DCF: solve for the growth the current price implies, then ask — has this company EVER delivered that? The gap between implied and demonstrated is where returns actually come from. Everything else is commentary."],
+  ["accruals","4. The accruals smell test","(Profit − operating cash) ÷ revenue. When earnings persistently run ahead of cash, companies systematically disappoint later — the most academically validated red flag in accounting (the Sloan anomaly), and almost never on a retail screen."],
+  ["reinvest","5. Reinvestment effectiveness","Revenue added per dollar of capex. Did management's spending buy growth, or is it treadmill maintenance dressed as investment? This is the capital-allocation report card nobody publishes."],
+  ["resilience","6. Worst-year resilience","Veterans size positions by the floor, not the average. What did the WORST year in the window look like? That is the year you must be able to hold through — and the averages hide it."],
+];
+function renderVeteran(){
+  const rows = computeRows().map(s=>({s, V:veteranMetrics(s)}))
+    .sort((a,b)=>b.V.composite-a.V.composite);
+
+  const bySector = {};
+  rows.forEach(r=>{ (bySector[r.s.sec]=bySector[r.s.sec]||[]).push(r); });
+  const sectorNames = Object.keys(bySector).sort((a,b)=>bySector[b].length-bySector[a].length);
+
+  const intro = `
+  <div class="secintro">
+    <h2>The Veteran's Lens</h2>
+    <p>Six assessments drawn from how investors with decades of scar tissue actually filter — none of them standard screener parameters, because anything everyone screens on is already in the price. Each lens below explains its own reasoning. Click any stock for the full six-lens breakdown.</p>
+  </div>
+  <div class="panelgrid" style="margin-bottom:22px">
+    ${VETERAN_LENSES.map(([k,t,d])=>`<div class="panel"><div class="panelt" style="margin-bottom:6px">${t}</div><p style="font-size:13px;color:#444;line-height:1.6;margin:0">${d}</p></div>`).join("")}
+  </div>
+  <div class="viewtoggle" style="margin-bottom:18px">
+    <button data-vview="sector" class="${State.veteranView==='sector'?'on':''}">Top 5 by sector</button>
+    <button data-vview="full" class="${State.veteranView==='full'?'on':''}">Full ranking</button>
+  </div>`;
+
+  if(State.veteranView==="sector"){
+    return intro + `
+    <div style="display:flex;flex-direction:column;gap:22px">
+      ${sectorNames.map(sec=>{
+        const top5 = bySector[sec].slice(0,5);
+        return `
+        <div class="scorebox">
+          <div class="cyclehead">${sec.toUpperCase()} · top ${top5.length} of ${bySector[sec].length} by Veteran Score</div>
+          <div style="overflow-x:auto">
+          <table class="grid" style="border:none;border-radius:0">
+            <thead><tr>
+              <th class="left">Rank</th><th class="left">Stock</th><th>Steadiness</th><th>Incremental</th><th>Implied vs proven</th><th>Accruals</th><th>Reinvestment</th><th>Worst year</th><th>Veteran score</th>
+            </tr></thead>
+            <tbody>
+              ${top5.map(({s,V},i)=>{
+                const cell=m=>`<td><span class="pill ${m.score>=68?'good':m.score>=45?'neutral':'warn'}" title="${m.verdict}">${m.score}</span></td>`;
+                const isOpen=State.veteranOpen===s.t;
+                return `
+                <tr class="row" data-vopen="${s.t}">
+                  <td class="left" style="color:var(--dim);font-family:var(--mono)">#${i+1}</td>
+                  <td class="left"><span class="tname">${s.t}</span><span class="tsub">${s.n}</span></td>
+                  ${cell(V.steadiness)}${cell(V.incremental)}${cell(V.impliedGrowth)}${cell(V.accruals)}${cell(V.reinvest)}${cell(V.resilience)}
+                  <td><span class="pill ${V.composite>=65?'good':V.composite>=48?'neutral':'warn'}" style="font-size:13px">${V.composite}</span></td>
+                </tr>
+                ${isOpen?`<tr><td colspan="9" style="text-align:left;background:#fafaf8;padding:18px 22px">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <b style="font-size:15px">${s.n} — the six lenses</b>
+                    <button class="preset" data-open="${s.t}">Open full tearsheet →</button>
+                  </div>
+                  ${VETERAN_LENSES.map(([k,t])=>{const m=V[k];return `
+                  <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+                    <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">
+                      <b style="font-size:13.5px">${t.replace(/^\d+\. /,'')}</b>
+                      <span class="pill ${m.score>=68?'good':m.score>=45?'neutral':'warn'}">${m.score} · ${m.verdict}</span>
+                    </div>
+                    <p style="font-size:13px;color:#333;line-height:1.6;margin:6px 0 0">${m.read}</p>
+                  </div>`;}).join("")}
+                </td></tr>`:''}`;
+              }).join("")}
+            </tbody>
+          </table>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+    <p class="hint" style="margin-top:18px">Ranked by Veteran Score (equal-weighted average of all six lenses) within each sector. Sectors with fewer than 5 names show all available. Honest caveat: several lenses (steadiness, resilience, reinvestment) work best with 8-10 years of history; this dataset carries 4, so treat borderline scores gently.</p>
+    `;
+  }
+
+  return intro + `
+  <div style="overflow-x:auto">
+  <table class="grid">
+    <thead><tr>
+      <th class="left">Stock</th><th>Steadiness</th><th>Incremental</th><th>Implied vs proven</th><th>Accruals</th><th>Reinvestment</th><th>Worst year</th><th>Veteran score</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map(({s,V})=>{
+        const cell=m=>`<td><span class="pill ${m.score>=68?'good':m.score>=45?'neutral':'warn'}" title="${m.verdict}">${m.score}</span></td>`;
+        const isOpen=State.veteranOpen===s.t;
+        return `
+        <tr class="row" data-vopen="${s.t}">
+          <td class="left"><span class="tname">${s.t}</span><span class="tsub">${s.n}</span></td>
+          ${cell(V.steadiness)}${cell(V.incremental)}${cell(V.impliedGrowth)}${cell(V.accruals)}${cell(V.reinvest)}${cell(V.resilience)}
+          <td><span class="pill ${V.composite>=65?'good':V.composite>=48?'neutral':'warn'}" style="font-size:13px">${V.composite}</span></td>
+        </tr>
+        ${isOpen?`<tr><td colspan="8" style="text-align:left;background:#fafaf8;padding:18px 22px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <b style="font-size:15px">${s.n} — the six lenses</b>
+            <button class="preset" data-open="${s.t}">Open full tearsheet →</button>
+          </div>
+          ${VETERAN_LENSES.map(([k,t])=>{const m=V[k];return `
+          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
+            <div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">
+              <b style="font-size:13.5px">${t.replace(/^\d+\. /,'')}</b>
+              <span class="pill ${m.score>=68?'good':m.score>=45?'neutral':'warn'}">${m.score} · ${m.verdict}</span>
+            </div>
+            <p style="font-size:13px;color:#333;line-height:1.6;margin:6px 0 0">${m.read}</p>
+          </div>`;}).join("")}
+        </td></tr>`:''}`;
+      }).join("")}
+    </tbody>
+  </table>
+  </div>
+  <p class="hint">Honest caveat: several lenses (steadiness, resilience, reinvestment) work best with 8-10 years of history; this dataset carries 4, so treat borderline scores gently. The implied-growth lens uses a 10% discount rate fading to 3% terminal — the same conservative frame throughout the dashboard.</p>
+  `;
+}
+
 function render(){
   const root = document.getElementById("root");
   root.innerHTML = `
     ${renderHeader()}
     <div class="wrap">
       ${renderWatchDrawer()}
-      ${State.tab==="sectors" ? renderSectors() : State.tab==="compare" ? renderCompare() : State.tab==="playbook" ? renderPlaybook() : State.tab==="learn" ? renderLearn() : (State.sel ? renderTearsheet(State.sel) : renderScreener())}
+      ${State.tab==="sectors" ? renderSectors() : State.tab==="compare" ? renderCompare() : State.tab==="playbook" ? renderPlaybook() : State.tab==="learn" ? renderLearn() : State.tab==="veteran" ? renderVeteran() : (State.sel ? renderTearsheet(State.sel) : renderScreener())}
     </div>
   `;
   wireEvents();
@@ -1387,7 +1511,7 @@ function wireEvents(){
   const searchBox=document.getElementById("searchBox");
   if(searchBox){ searchBox.oninput=e=>{State.q=e.target.value;render();}; searchBox.focus(); searchBox.setSelectionRange(State.q.length,State.q.length); }
 
-  root.querySelectorAll("[data-open]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-star]')||e.target.closest('[data-cmp]'))return; State.sel=el.dataset.open;State.kpiExpanded=false;render();});
+  root.querySelectorAll("[data-open]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-star]')||e.target.closest('[data-cmp]'))return; State.sel=el.dataset.open;State.tab="stocks";State.kpiExpanded=false;render();});
   root.querySelectorAll("[data-opensector]").forEach(el=>el.onclick=()=>{ if(el.dataset.opensector){State.sel=el.dataset.opensector;State.tab="stocks";render();}});
   const backBtn=document.getElementById("backBtn");
   if(backBtn) backBtn.onclick=()=>{State.sel=null;render();};
@@ -1435,6 +1559,8 @@ function wireEvents(){
   });
 
   root.querySelectorAll("[data-learnsec]").forEach(el=>el.onclick=()=>{State.learnSection=el.dataset.learnsec;render();});
+  root.querySelectorAll("[data-vopen]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-open]'))return; State.veteranOpen=State.veteranOpen===el.dataset.vopen?null:el.dataset.vopen;render();});
+  root.querySelectorAll("[data-vview]").forEach(el=>el.onclick=()=>{State.veteranView=el.dataset.vview;State.veteranOpen=null;render();});
   const learnSearch=document.getElementById("learnSearch");
   if(learnSearch){ learnSearch.oninput=e=>{State.learnSearch=e.target.value;render();}; }
 }
