@@ -218,8 +218,81 @@ input[type=range]{width:100px;accent-color:var(--accent);}
 .watchrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);}
 .watchrow:last-child{border-bottom:none;}
 
+/* ============================================================
+   MOBILE RESPONSIVE — tablet and phone breakpoints.
+   Desktop layout above is untouched; these overrides only kick
+   in below 760px (tablet) and 480px (phone).
+   ============================================================ */
 @media (max-width:760px){
-  .panelgrid{grid-template-columns:1fr;}
+  .wrap{padding:14px 14px 48px;}
+  .headrow{padding:12px 14px;gap:10px;}
+  .brand{font-size:15px;}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;flex-wrap:nowrap;}
+  .tabs button{padding:7px 11px;font-size:13px;white-space:nowrap;flex-shrink:0;}
+  .watchbtn{font-size:12.5px;padding:6px 10px;}
+  .livebadge{font-size:11px;}
+
+  .presets{gap:6px;margin:14px 0 10px;}
+  .preset{font-size:12.5px;padding:6px 10px;}
+  .toolbar{gap:8px;}
+  .seg button{padding:6px 10px;font-size:12.5px;}
+  .search{width:100%;max-width:none;}
+
+  table.grid th{padding:9px 10px;font-size:11px;}
+  table.grid td{padding:10px 10px;font-size:13.5px;}
+
+  .tshead{gap:14px;padding-bottom:14px;}
+  .tsticker{font-size:20px;}
+  .tsprice{font-size:22px;}
+  .tsverdict{padding:8px 12px;}
+
+  .kpiCore{grid-template-columns:repeat(2,1fr);}
+  .kpi{padding:12px 10px;}
+  .kpiV{font-size:16px;}
+  .kpiL{font-size:10.5px;}
+
+  .panelgrid{grid-template-columns:1fr;gap:10px;}
   .panel.wide{grid-column:span 1;}
+  .panel{padding:14px;}
+
+  .matrixgrid{grid-template-columns:repeat(2,1fr);}
+  .matrixcell{padding:9px 10px;font-size:12px;}
+
+  .dcfbox{gap:12px;}
+  .dcfsliders{width:100%;}
+  .dcfsliders input[type=range]{flex:1;min-width:120px;}
+
+  .driverboard{grid-template-columns:1fr;}
+  .driverflow{grid-template-columns:1fr;gap:8px;}
   .phasecols{grid-template-columns:1fr;}
+  .phaserow{gap:6px;padding:12px 14px 0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;}
+  .phasebtn{white-space:nowrap;flex-shrink:0;font-size:12.5px;padding:6px 10px;}
+
+  .secintro h2{font-size:19px;}
+  .secintro p{font-size:13.5px;}
+
+  .viewtoggle button{padding:6px 12px;font-size:13px;}
+
+  /* Decision Engine quadrant map: side-by-side → stacked */
+  .matrix > div[style*="220px 1fr"]{grid-template-columns:1fr !important;}
+
+  .askbox{padding:14px;}
+  .askbtns{flex-wrap:wrap;}
+  .askbtn{font-size:13px;padding:8px 14px;}
+
+  .sourcesgrid{grid-template-columns:1fr 1fr;}
+}
+
+@media (max-width:480px){
+  .wrap{padding:10px 10px 40px;}
+  .headrow{padding:10px 10px;}
+  .kpiCore{grid-template-columns:repeat(2,1fr);}
+  .matrixgrid{grid-template-columns:1fr;}
+  .sourcesgrid{grid-template-columns:1fr;}
+  .tsprice{font-size:20px;}
+  .tsticker{font-size:18px;}
+  table.grid td, table.grid th{padding:8px 8px;}
+  .panel{padding:12px;}
+  .askbtns{flex-direction:column;align-items:stretch;}
+  .askbtn{text-align:center;}
 }
