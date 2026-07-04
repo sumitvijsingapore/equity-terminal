@@ -67,6 +67,16 @@ fetch("estimates.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
   render();
 }).catch(()=>{ /* fine — analyst outlook panel shows a setup message instead */ });
 
+let VERIFY_US = null;
+fetch("verify_us.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  if(Array.isArray(d)){ VERIFY_US={}; d.forEach(rec=>{ if(rec.ticker) VERIFY_US[rec.ticker]=rec; }); render(); }
+}).catch(()=>{ /* fine — data integrity panel just skips the SEC cross-check */ });
+
+let VERIFY_IN = null;
+fetch("verify_in.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  if(Array.isArray(d)){ VERIFY_IN={}; d.forEach(rec=>{ if(rec.ticker) VERIFY_IN[rec.ticker]=rec; }); render(); }
+}).catch(()=>{ /* fine — data integrity panel just skips the NSE cross-check */ });
+
 function computeRows(){
   return State.data.map(s=>{
     const intrinsic = dcf(normalize(s), {discount:State.discount, termGrowth:State.termGrowth, years:10});
@@ -236,6 +246,7 @@ function renderTearsheet(t){
   </div>
 
   <div class="takeaway">${takeaway(s)}</div>
+  ${renderDataIntegrity(s)}
   ${renderDecisionEngine(s)}
   ${renderIntegratedVerdict(s, rows)}
 
@@ -553,6 +564,35 @@ function renderIntegratedVerdict(s, allRows){
 }
 
 /* ---------- macro context panel ---------- */
+/* ---------- data integrity panel ---------- */
+function renderDataIntegrity(s){
+  const D = dataIntegrityChecks(s, VERIFY_US, VERIFY_IN);
+  if(D.checks.length===0) return "";  // nothing to say, don't clutter the page
+  const warns = D.checks.filter(c=>c.sev==="warn");
+  const infos = D.checks.filter(c=>c.sev==="info");
+  const goods = D.checks.filter(c=>c.sev==="good");
+  const badgeColor = D.warnCount>0 ? "#c0392b" : goods.length ? "#1a8a63" : "#b8860b";
+  return `
+  <div class="matrix" style="margin-top:16px;border-color:${badgeColor}">
+    <div class="matrixhead" style="background:${badgeColor}10">
+      DATA INTEGRITY · ${D.overall}${D.warnCount>0?` (${D.warnCount})`:""}
+      <span style="font-size:11px;color:var(--dim);font-weight:400">cross-checked against independent sources where available</span>
+    </div>
+    <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
+      ${[...warns,...infos,...goods].map(c=>`
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)">
+          <span style="font-size:14px;flex-shrink:0">${c.sev==="warn"?"⚑":c.sev==="good"?"✓":"ℹ"}</span>
+          <div>
+            <b style="font-size:12.5px;color:${c.sev==="warn"?"#c0392b":c.sev==="good"?"#1a8a63":"#444"}">${c.label}</b>
+            <p style="font-size:12px;color:#444;line-height:1.55;margin:4px 0 0">${c.detail}</p>
+          </div>
+        </div>`).join("")}
+    </div>
+    <p style="font-size:10.5px;color:var(--dim);padding:0 18px 14px;margin:0;line-height:1.5">Internal checks (market cap reconciliation, YoY jump detection, 52-week range plausibility) run automatically on every stock. External cross-checks against SEC filings (US) or NSE's official reports (India) run only after <code>fetch_verify_us.py</code> / <code>fetch_verify_in.py</code> have been run — see README for setup.</p>
+  </div>`;
+}
+
+
 function renderMacroPanel(s){
   const macro = macroRead(s, MACRO_DATA);
   if(!macro){

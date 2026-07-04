@@ -831,3 +831,86 @@ function valuationExtras(s){
   }
   return out;
 }
+
+/* ============================================================
+   DATA INTEGRITY — catches exactly the kind of problem Vedanta's
+   unadjusted 52-week high exposed: internal inconsistencies (no
+   fetch needed) plus, when available, cross-checks against
+   independent primary sources (SEC XBRL for US, NSE's own
+   adjusted-for-corporate-actions report for India).
+   ============================================================ */
+function dataIntegrityChecks(s, verifyUS, verifyIN){
+  const checks = [];
+  const add=(sev,label,detail)=>checks.push({sev,label,detail});
+  const A = s.annual;
+
+  /* ---------- always-on internal consistency (no fetch needed) ---------- */
+  if(s.high52!=null && s.price>0 && s.high52/s.price>2.2){
+    add("warn","52-week high looks implausible",
+      `52-week high (${fmtP(s.high52,s.mkt)}) is ${(s.high52/s.price).toFixed(1)}× the current price. This pattern typically means a demerger, stock split, or bonus issue happened during the window and the historical price wasn't adjusted for it — not that the stock actually fell this far. Treat the 52-week range position (and anything derived from it, like the Momentum pillar) with caution for this stock specifically.`);
+  }
+  if(s.low52!=null && s.price>0 && s.price/s.low52>3){
+    add("info","52-week low sits far below current price",
+      `Current price is ${(s.price/s.low52).toFixed(1)}× the 52-week low — worth a quick sanity check that this reflects a real rally rather than an unadjusted pre-split/demerger low.`);
+  }
+  if(s.shares>0 && s.price>0){
+    const impliedMcap = s.price*s.shares;
+    const diff = s.mcap>0 ? Math.abs(impliedMcap-s.mcap)/s.mcap*100 : null;
+    if(diff!=null && diff>8){
+      add("warn","Market cap doesn't reconcile with price × shares",
+        `Stated market cap (${fmtB(s.mcap,s.mkt)}) differs from price×shares (${fmtB(impliedMcap,s.mkt)}) by ${diff.toFixed(0)}% — could mean a stale shares-outstanding count after a buyback, split, or recent share issuance.`);
+    }
+  }
+  if(s.pe!=null && A.netIncome?.[0]!=null && s.shares>0 && A.netIncome[0]!==0){
+    const impliedEps = A.netIncome[0]/s.shares;
+    const impliedPe = impliedEps>0 ? s.price/impliedEps : null;
+    if(impliedPe!=null && s.pe>0){
+      const diff = Math.abs(impliedPe-s.pe)/s.pe*100;
+      if(diff>25) add("info","P/E doesn't fully reconcile with reported net income",
+        `Stated P/E (${s.pe.toFixed(1)}) implies EPS different from net income ÷ shares outstanding by ${diff.toFixed(0)}% — often explained by one-off items excluded from "adjusted" EPS, preferred dividends, or a recent share count change. Not necessarily wrong, just worth knowing which EPS definition is in play.`);
+    }
+  }
+  const revG = yoy(A.revenue), niG = yoy(A.netIncome);
+  if(revG!=null && Math.abs(revG)>150) add("info","Unusually large YoY revenue swing",
+    `Revenue moved ${sign(revG)} year-over-year — magnitudes this large are usually a real event (M&A, divestiture, demerger) rather than organic performance. Worth confirming what happened before treating this as a pure growth signal.`);
+  if(niG!=null && Math.abs(niG)>300) add("info","Unusually large YoY net income swing",
+    `Net income moved ${sign(niG)} year-over-year — check for one-off items (asset sales, impairments, tax adjustments) before reading this as an operating trend.`);
+
+  if(s.bsDetail){
+    const ta=s.bsDetail.totalAssets?.[0], tl=s.bsDetail.totalLiab?.[0];
+    if(ta!=null && tl!=null && ta>0 && tl>ta*1.5) add("warn","Liabilities substantially exceed assets",
+      `Total liabilities run well above total assets — could indicate negative equity (common for some leveraged buyouts or heavily bought-back companies, but worth confirming it's not a data-parsing issue for this specific filer).`);
+  }
+
+  /* ---------- external verification (only when loaded) ---------- */
+  if(s.mkt==="US" && verifyUS){
+    const v = verifyUS[s.t];
+    if(v){
+      if(v.revenueDiffPct!=null && Math.abs(v.revenueDiffPct)>8)
+        add("warn","Revenue differs from SEC-filed figure",
+          `Yahoo-sourced revenue differs from what was actually filed with the SEC (XBRL company facts) by ${sign(v.revenueDiffPct)}. SEC figure: ${fmtB(v.secRevenue,s.mkt)}. This is the primary source — worth trusting it over the aggregator when they disagree.`);
+      if(v.netIncomeDiffPct!=null && Math.abs(v.netIncomeDiffPct)>8)
+        add("warn","Net income differs from SEC-filed figure",
+          `Yahoo-sourced net income differs from the SEC-filed figure by ${sign(v.netIncomeDiffPct)}. SEC figure: ${fmtB(v.secNetIncome,s.mkt)}.`);
+      if(v.revenueDiffPct==null && v.netIncomeDiffPct==null)
+        add("good","Cross-checked against SEC filings","Revenue and net income match the company's own SEC-filed figures within a normal tolerance.");
+    }
+  }
+  if(s.mkt==="IN" && verifyIN){
+    const v = verifyIN[s.t];
+    if(v){
+      if(v.high52DiffPct!=null && Math.abs(v.high52DiffPct)>5)
+        add("warn","52-week high differs from NSE's official adjusted figure",
+          `Yahoo-sourced 52-week high differs from NSE's own corporate-action-adjusted report by ${sign(v.high52DiffPct)}. NSE figure: ${fmtP(v.nseHigh52,s.mkt)} — this is the authoritative source for Indian equities.`);
+      if(v.low52DiffPct!=null && Math.abs(v.low52DiffPct)>5)
+        add("warn","52-week low differs from NSE's official adjusted figure",
+          `Yahoo-sourced 52-week low differs from NSE's adjusted report by ${sign(v.low52DiffPct)}. NSE figure: ${fmtP(v.nseLow52,s.mkt)}.`);
+      if(v.high52DiffPct==null && v.low52DiffPct==null)
+        add("good","Cross-checked against NSE's official report","52-week range matches NSE's own corporate-action-adjusted figures.");
+    }
+  }
+
+  const warnCount = checks.filter(c=>c.sev==="warn").length;
+  const overall = warnCount>0 ? "Flagged" : checks.some(c=>c.sev==="good") ? "Verified" : "No issues found";
+  return { checks, warnCount, overall };
+}
