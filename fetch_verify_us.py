@@ -36,6 +36,8 @@ TEST_TICKERS = ["AAPL", "MSFT", "NVDA"]
 REVENUE_TAGS = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues",
                 "SalesRevenueNet", "RevenueFromContractWithCustomerIncludingAssessedTax"]
 NET_INCOME_TAGS = ["NetIncomeLoss", "ProfitLoss"]
+ASSETS_TAGS = ["Assets"]
+LIABILITIES_TAGS = ["Liabilities", "LiabilitiesAndStockholdersEquity"]
 
 
 def get_cik_map():
@@ -112,26 +114,40 @@ def main(use_test_list=True):
             facts = r.json()
             sec_rev, rev_date = latest_annual_value(facts, REVENUE_TAGS)
             sec_ni, ni_date = latest_annual_value(facts, NET_INCOME_TAGS)
+            sec_assets, assets_date = latest_annual_value(facts, ASSETS_TAGS)
+            sec_liab, liab_date = latest_annual_value(facts, LIABILITIES_TAGS)
 
             yf_rev = (stocks[ticker].get("annual", {}).get("revenue") or [None])[0]
             yf_ni = (stocks[ticker].get("annual", {}).get("netIncome") or [None])[0]
+            yf_assets = (stocks[ticker].get("bsDetail", {}).get("totalAssets") or [None])[0]
+            yf_liab = (stocks[ticker].get("bsDetail", {}).get("totalLiab") or [None])[0]
             # data.json stores in $bn; SEC gives raw dollars
             yf_rev_raw = yf_rev * 1e9 if yf_rev is not None else None
             yf_ni_raw = yf_ni * 1e9 if yf_ni is not None else None
+            yf_assets_raw = yf_assets * 1e9 if yf_assets is not None else None
+            yf_liab_raw = yf_liab * 1e9 if yf_liab is not None else None
 
             rev_diff = pct_diff(yf_rev_raw, sec_rev)
             ni_diff = pct_diff(yf_ni_raw, sec_ni)
+            assets_diff = pct_diff(yf_assets_raw, sec_assets)
+            liab_diff = pct_diff(yf_liab_raw, sec_liab)
 
             results[ticker] = {
                 "ticker": ticker,
                 "secRevenue": round(sec_rev / 1e9, 3) if sec_rev else None,
                 "secNetIncome": round(sec_ni / 1e9, 3) if sec_ni else None,
+                "secAssets": round(sec_assets / 1e9, 3) if sec_assets else None,
+                "secLiabilities": round(sec_liab / 1e9, 3) if sec_liab else None,
                 "secRevenueDate": rev_date, "secNetIncomeDate": ni_date,
                 "revenueDiffPct": rev_diff if rev_diff and abs(rev_diff) > 8 else None,
                 "netIncomeDiffPct": ni_diff if ni_diff and abs(ni_diff) > 8 else None,
+                "assetsDiffPct": assets_diff if assets_diff and abs(assets_diff) > 8 else None,
+                "liabilitiesDiffPct": liab_diff if liab_diff and abs(liab_diff) > 8 else None,
             }
-            flag = " ⚑" if (results[ticker]["revenueDiffPct"] or results[ticker]["netIncomeDiffPct"]) else ""
-            print(f"rev diff {rev_diff}%, NI diff {ni_diff}%{flag}")
+            flags = [results[ticker][k] for k in
+                     ("revenueDiffPct","netIncomeDiffPct","assetsDiffPct","liabilitiesDiffPct")]
+            flag = " ⚑" if any(flags) else ""
+            print(f"rev diff {rev_diff}%, NI diff {ni_diff}%, assets diff {assets_diff}%, liab diff {liab_diff}%{flag}")
         except Exception as e:
             print(f"error: {e}")
 

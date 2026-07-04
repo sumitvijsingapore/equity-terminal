@@ -588,7 +588,7 @@ function renderDataIntegrity(s){
           </div>
         </div>`).join("")}
     </div>
-    <p style="font-size:10.5px;color:var(--dim);padding:0 18px 14px;margin:0;line-height:1.5">Internal checks (market cap reconciliation, YoY jump detection, 52-week range plausibility) run automatically on every stock. External cross-checks against SEC filings (US) or NSE's official reports (India) run only after <code>fetch_verify_us.py</code> / <code>fetch_verify_in.py</code> have been run — see README for setup.</p>
+    <p style="font-size:10.5px;color:var(--dim);padding:0 18px 14px;margin:0;line-height:1.5">Internal checks (market cap reconciliation, YoY jump detection, 52-week range plausibility) run automatically on every stock. External cross-checks — revenue, net income, total assets &amp; liabilities against SEC filings (US); current price and 52-week range against NSE's own quote and adjusted-range reports (India) — run only after <code>fetch_verify_us.py</code> / <code>fetch_verify_in.py</code> have been run. Not every field is verified against an outside source — see README for the exact scope.</p>
   </div>`;
 }
 

@@ -892,21 +892,30 @@ function dataIntegrityChecks(s, verifyUS, verifyIN){
       if(v.netIncomeDiffPct!=null && Math.abs(v.netIncomeDiffPct)>8)
         add("warn","Net income differs from SEC-filed figure",
           `Yahoo-sourced net income differs from the SEC-filed figure by ${sign(v.netIncomeDiffPct)}. SEC figure: ${fmtB(v.secNetIncome,s.mkt)}.`);
-      if(v.revenueDiffPct==null && v.netIncomeDiffPct==null)
-        add("good","Cross-checked against SEC filings","Revenue and net income match the company's own SEC-filed figures within a normal tolerance.");
+      if(v.assetsDiffPct!=null && Math.abs(v.assetsDiffPct)>8)
+        add("warn","Total assets differ from SEC-filed figure",
+          `Yahoo-sourced total assets differ from the SEC-filed figure by ${sign(v.assetsDiffPct)}. SEC figure: ${fmtB(v.secAssets,s.mkt)}. This feeds directly into the Altman Z and Piotroski F forensic scores — a large gap here means those scores deserve extra skepticism for this stock.`);
+      if(v.liabilitiesDiffPct!=null && Math.abs(v.liabilitiesDiffPct)>8)
+        add("warn","Total liabilities differ from SEC-filed figure",
+          `Yahoo-sourced total liabilities differ from the SEC-filed figure by ${sign(v.liabilitiesDiffPct)}. SEC figure: ${fmtB(v.secLiabilities,s.mkt)}.`);
+      if(!v.revenueDiffPct && !v.netIncomeDiffPct && !v.assetsDiffPct && !v.liabilitiesDiffPct)
+        add("good","Cross-checked against SEC filings","Revenue, net income, total assets, and total liabilities all match the company's own SEC-filed figures within a normal tolerance.");
     }
   }
   if(s.mkt==="IN" && verifyIN){
     const v = verifyIN[s.t];
     if(v){
+      if(v.priceDiffPct!=null && Math.abs(v.priceDiffPct)>3)
+        add("warn","Current price differs from NSE's live quote",
+          `Yahoo-sourced price differs from NSE's own last-traded price by ${sign(v.priceDiffPct)} (NSE: ${fmtP(v.nsePrice,s.mkt)}). Since every ratio on this tearsheet is built on price, a gap this size is worth resolving before trusting the numbers — most likely explanation is simply a stale Yahoo quote at the time data.json was last refreshed.`);
       if(v.high52DiffPct!=null && Math.abs(v.high52DiffPct)>5)
         add("warn","52-week high differs from NSE's official adjusted figure",
           `Yahoo-sourced 52-week high differs from NSE's own corporate-action-adjusted report by ${sign(v.high52DiffPct)}. NSE figure: ${fmtP(v.nseHigh52,s.mkt)} — this is the authoritative source for Indian equities.`);
       if(v.low52DiffPct!=null && Math.abs(v.low52DiffPct)>5)
         add("warn","52-week low differs from NSE's official adjusted figure",
           `Yahoo-sourced 52-week low differs from NSE's adjusted report by ${sign(v.low52DiffPct)}. NSE figure: ${fmtP(v.nseLow52,s.mkt)}.`);
-      if(v.high52DiffPct==null && v.low52DiffPct==null)
-        add("good","Cross-checked against NSE's official report","52-week range matches NSE's own corporate-action-adjusted figures.");
+      if(!v.priceDiffPct && !v.high52DiffPct && !v.low52DiffPct)
+        add("good","Cross-checked against NSE","Current price and 52-week range both match NSE's own official figures.");
     }
   }
 

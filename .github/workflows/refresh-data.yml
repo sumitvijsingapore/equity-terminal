@@ -29,8 +29,9 @@ jobs:
       - name: Run US fundamentals verification (daily, cross-checks SEC filings)
         run: |
           python -c "import fetch_verify_us; fetch_verify_us.main(use_test_list=False)" || echo "US verification failed, continuing"
-      - name: Run India 52-week range verification (daily, cross-checks NSE)
-        run: python fetch_verify_in.py || echo "NSE verification failed (endpoint may have changed), continuing"
+      - name: Run India price + range verification (daily, cross-checks NSE)
+        run: |
+          python -c "import fetch_verify_in; fetch_verify_in.main(use_test_list=False)" || echo "NSE verification failed (endpoint may have changed), continuing"
       - name: Run EDGAR earnings fetch (full SP500, weekly)
         run: |
           DAY=$(date -u +%u)
