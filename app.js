@@ -24,12 +24,14 @@ const State = {
   watchlist: JSON.parse(localStorage.getItem("terminal_watchlist")||"[]"),
   compare: [],
   playbookCat: "all",
+  playbookMkt: "ALL",
   playbookOpen: null,
   learnSection: "all",
   learnSearch: "",
   decisionOpen: "pillars",
   veteranOpen: null,
   veteranView: "sector",
+  veteranMkt: "ALL",
 };
 
 function saveWatchlist(){ localStorage.setItem("terminal_watchlist", JSON.stringify(State.watchlist)); }
@@ -832,7 +834,8 @@ const CMP_COLORS=["#0e6e5c","#6d5dd3","#c0392b","#b8860b","#2563eb"];
    now; click a match to open its tearsheet.
    ============================================================ */
 function renderPlaybook(){
-  const rows = computeRows();
+  const allRows = computeRows();
+  const rows = State.playbookMkt==="ALL" ? allRows : allRows.filter(s=>s.mkt===State.playbookMkt);
   const ctx = { macro: MACRO_DATA, rows };
 
   const withMatches = PLAYBOOK.map(p=>{
@@ -847,7 +850,14 @@ function renderPlaybook(){
   return `
   <div class="secintro">
     <h2>The Combinations Playbook</h2>
-    <p>Twenty-four named, multi-metric patterns — the kind of cross-referencing a professional analyst does by habit. Each one combines several signals into a single recognizable setup, with a live count of how many stocks in your dataset match it right now. Click a card to see exactly which ones.</p>
+    <p>Twenty-two named, multi-metric patterns — the kind of cross-referencing a professional analyst does by habit. Each one combines several signals into a single recognizable setup, with a live count of how many stocks in your dataset match it right now. Click a card to see exactly which ones.</p>
+  </div>
+
+  <div class="toolbar" style="margin-bottom:14px">
+    <div class="seg">
+      ${["ALL","US","IN"].map(m=>`<button data-pbmkt="${m}" class="${State.playbookMkt===m?'on':''}">${m==="US"?"S&P 500":m==="IN"?"Nifty":"All markets"}</button>`).join("")}
+    </div>
+    <span style="font-size:12px;color:var(--dim);align-self:center">${rows.length} stocks in scope</span>
   </div>
 
   <div class="presets" style="margin-bottom:18px">
@@ -1378,7 +1388,9 @@ const VETERAN_LENSES=[
   ["resilience","6. Worst-year resilience","Veterans size positions by the floor, not the average. What did the WORST year in the window look like? That is the year you must be able to hold through — and the averages hide it."],
 ];
 function renderVeteran(){
-  const rows = computeRows().map(s=>({s, V:veteranMetrics(s)}))
+  const allRows = computeRows();
+  const scoped = State.veteranMkt==="ALL" ? allRows : allRows.filter(s=>s.mkt===State.veteranMkt);
+  const rows = scoped.map(s=>({s, V:veteranMetrics(s)}))
     .sort((a,b)=>b.V.composite-a.V.composite);
 
   const bySector = {};
@@ -1392,6 +1404,12 @@ function renderVeteran(){
   </div>
   <div class="panelgrid" style="margin-bottom:22px">
     ${VETERAN_LENSES.map(([k,t,d])=>`<div class="panel"><div class="panelt" style="margin-bottom:6px">${t}</div><p style="font-size:13px;color:#444;line-height:1.6;margin:0">${d}</p></div>`).join("")}
+  </div>
+  <div class="toolbar" style="margin-bottom:14px">
+    <div class="seg">
+      ${["ALL","US","IN"].map(m=>`<button data-vmkt="${m}" class="${State.veteranMkt===m?'on':''}">${m==="US"?"S&P 500":m==="IN"?"Nifty":"All markets"}</button>`).join("")}
+    </div>
+    <span style="font-size:12px;color:var(--dim);align-self:center">${rows.length} stocks in scope</span>
   </div>
   <div class="viewtoggle" style="margin-bottom:18px">
     <button data-vview="sector" class="${State.veteranView==='sector'?'on':''}">Top 5 by sector</button>
@@ -1550,6 +1568,7 @@ function wireEvents(){
   root.querySelectorAll("[data-phase]").forEach(el=>el.onclick=()=>{State.phase=+el.dataset.phase;render();});
 
   root.querySelectorAll("[data-pbcat]").forEach(el=>el.onclick=()=>{State.playbookCat=el.dataset.pbcat;render();});
+  root.querySelectorAll("[data-pbmkt]").forEach(el=>el.onclick=()=>{State.playbookMkt=el.dataset.pbmkt;render();});
   root.querySelectorAll("[data-pbtoggle]").forEach(el=>el.onclick=()=>{
     State.playbookOpen = State.playbookOpen===el.dataset.pbtoggle ? null : el.dataset.pbtoggle;
     render();
@@ -1563,6 +1582,7 @@ function wireEvents(){
   root.querySelectorAll("[data-learnsec]").forEach(el=>el.onclick=()=>{State.learnSection=el.dataset.learnsec;render();});
   root.querySelectorAll("[data-vopen]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-open]'))return; State.veteranOpen=State.veteranOpen===el.dataset.vopen?null:el.dataset.vopen;render();});
   root.querySelectorAll("[data-vview]").forEach(el=>el.onclick=()=>{State.veteranView=el.dataset.vview;State.veteranOpen=null;render();});
+  root.querySelectorAll("[data-vmkt]").forEach(el=>el.onclick=()=>{State.veteranMkt=el.dataset.vmkt;State.veteranOpen=null;render();});
   const learnSearch=document.getElementById("learnSearch");
   if(learnSearch){ learnSearch.oninput=e=>{State.learnSearch=e.target.value;render();}; }
 }
