@@ -692,3 +692,142 @@ function veteranMetrics(s){
   M.composite=Math.round(parts.reduce((a,p)=>a+p.score,0)/parts.length);
   return M;
 }
+
+/* ============================================================
+   FORENSIC SCORES — Altman Z (bankruptcy risk), Piotroski F
+   (fundamental strength trajectory), Beneish M (earnings
+   manipulation probability). All three are public, well-
+   documented academic formulas, computed here from real balance
+   sheet detail (bsDetail) fetched via yfinance -- no paid data,
+   no approximation. If a required field is missing for a given
+   stock, the score returns null with an honest reason rather
+   than guessing.
+   ============================================================ */
+function forensicScores(s){
+  const bs = s.bsDetail;
+  const A = s.annual;
+  const v0=a=>(a&&a.length&&a[0]!=null)?a[0]:null;
+  const v1=a=>(a&&a.length>1&&a[1]!=null)?a[1]:null;
+
+  const out = { altman:null, piotroski:null, beneish:null };
+
+  if(!bs){
+    return { altman:{score:null,read:"Balance sheet detail not yet loaded for this stock — run the updated fetch_data.py to activate."},
+             piotroski:{score:null,read:"Balance sheet detail not yet loaded for this stock — run the updated fetch_data.py to activate."},
+             beneish:{score:null,read:"Balance sheet detail not yet loaded for this stock — run the updated fetch_data.py to activate."} };
+  }
+
+  const ta=v0(bs.totalAssets), tl=v0(bs.totalLiab), ca=v0(bs.currentAssets), cl=v0(bs.currentLiab),
+        re=v0(bs.retainedEarnings), ebit=v0(A.operatingIncome), sales=v0(A.revenue), mcap=s.mcap;
+
+  /* ---------- ALTMAN Z-SCORE ---------- */
+  if(ta&&tl&&sales!=null&&ebit!=null&&ca!=null&&cl!=null&&mcap!=null&&ta>0){
+    const wcTa=(ca-cl)/ta, reTa=(re||0)/ta, ebitTa=ebit/ta, mveTl=tl>0?mcap/tl:null, saleTa=sales/ta;
+    if(mveTl!=null){
+      const z = 1.2*wcTa + 1.4*reTa + 3.3*ebitTa + 0.6*mveTl + 1.0*saleTa;
+      const zone = z>2.99?"Safe zone":z>1.81?"Grey zone":"Distress zone";
+      const color = z>2.99?"#1a8a63":z>1.81?"#b8860b":"#c0392b";
+      out.altman = {score:+z.toFixed(2), zone, color,
+        read:`Z-Score ${z.toFixed(2)} — ${zone}. ${z>2.99?"Statistically well outside the bankruptcy-risk range over a 2-year horizon; asset base, retained earnings, and market cushion all support the balance sheet.":z>1.81?"In the historically ambiguous range — not a red flag on its own, but worth checking alongside the Balance Sheet pillar in the Decision Engine before treating leverage as safe.":"Falls in the range Altman's original research associated with elevated bankruptcy risk within about 2 years. This doesn't mean distress is imminent, but it's a genuine statistical flag worth weighing seriously against everything else you know about this business."}`};
+    }
+  }
+  if(!out.altman) out.altman={score:null, read:"Missing one or more required fields (total assets, liabilities, working capital, EBIT, or sales) for this specific stock."};
+
+  /* ---------- PIOTROSKI F-SCORE ---------- */
+  {
+    const ta1=v1(bs.totalAssets), ca1=v1(bs.currentAssets), cl1=v1(bs.currentLiab),
+          ltd0=v0(bs.ltDebt), ltd1=v1(bs.ltDebt), ni0=v0(A.netIncome), ni1=v1(A.netIncome),
+          ocf0=v0(A.ocf), ocf1=v1(A.ocf), gp0=v0(A.grossProfit), gp1=v1(A.grossProfit),
+          sales1=v1(A.revenue), dsh0=bs.dilutedShares&&bs.dilutedShares[0], dsh1=bs.dilutedShares&&bs.dilutedShares[1];
+    let pts=0, possible=0; const checks=[];
+    const check=(cond,label)=>{ if(cond==null)return; possible++; if(cond)pts++; checks.push({label,pass:!!cond}); };
+
+    check(ta&&ni0!=null?ni0/ta>0:null, "Positive ROA this year");
+    check(ocf0!=null?ocf0>0:null, "Positive operating cash flow");
+    check((ta&&ta1&&ni0!=null&&ni1!=null)?(ni0/ta)>(ni1/ta1):null, "ROA improving YoY");
+    check((ocf0!=null&&ni0!=null)?ocf0>ni0:null, "Cash flow exceeds net income (quality)");
+    check((ta&&ta1&&ltd0!=null&&ltd1!=null)?(ltd0/ta)<(ltd1/ta1):null, "Leverage (LT debt/assets) declining");
+    check((ca!=null&&cl&&ca1!=null&&cl1)?(ca/cl)>(ca1/cl1):null, "Current ratio improving");
+    check((dsh0!=null&&dsh1!=null)?dsh0<=dsh1*1.01:null, "No meaningful new share issuance");
+    check((gp0!=null&&gp1!=null&&sales&&sales1)?(gp0/sales)>(gp1/sales1):null, "Gross margin improving");
+    check((ta&&ta1&&sales&&sales1)?(sales/ta)>(sales1/ta1):null, "Asset turnover improving");
+
+    if(possible>=6){
+      const pct=pts/possible;
+      const verdict = pct>=0.78?"Strengthening broadly":pct>=0.44?"Mixed signals":"Weakening broadly";
+      const color = pct>=0.78?"#1a8a63":pct>=0.44?"#b8860b":"#c0392b";
+      out.piotroski = {score:pts, possible, verdict, color, checks,
+        read:`${pts} of ${possible} assessable checks passed — ${verdict.toLowerCase()}. ${pct>=0.78?"Strong fundamental improvement across profitability, leverage, and efficiency simultaneously — historically the profile of a genuine turnaround rather than a value trap.":pct>=0.44?"Some dimensions improving, others not — a mixed trajectory that doesn't confirm a turnaround thesis on its own.":"Multiple independent dimensions deteriorating at once — if this stock also screens cheap, that cheapness likely reflects real, ongoing fundamental weakness rather than a market overreaction."}`};
+    } else {
+      out.piotroski = {score:null, read:`Only ${possible} of 9 checks had enough historical data to assess — needs at least 2 years of balance sheet history for most of this score.`};
+    }
+  }
+
+  /* ---------- BENEISH M-SCORE ---------- */
+  {
+    const rec0=v0(bs.receivables), rec1=v1(bs.receivables), cogs0=v0(bs.cogs), cogs1=v1(bs.cogs),
+          ca1=v1(bs.currentAssets), ppe0=v0(bs.ppeNet), ppe1=v1(bs.ppeNet), ta1=v1(bs.totalAssets),
+          sales1=v1(A.revenue), dep0=v0(bs.depreciation), dep1=v1(bs.depreciation),
+          sga0=v0(bs.sga), sga1=v1(bs.sga), ltd0=v0(bs.ltDebt), ltd1=v1(bs.ltDebt),
+          cl1=v1(bs.currentLiab), ni0=v0(A.netIncome), ocf0=v0(A.ocf);
+
+    const need=[rec0,rec1,cogs0,cogs1,ca,ca1,ppe0,ppe1,ta,ta1,sales,sales1,dep0,dep1,sga0,sga1,ltd0,ltd1,cl,cl1,ni0,ocf0];
+    if(need.every(v=>v!=null) && sales1&&sales&&ta&&ta1&&(ppe0+dep0)>0&&(ppe1+dep1)>0&&sga1&&cogs1!==sales1){
+      const dsri = (rec0/sales)/(rec1/sales1);
+      const gmi  = ((sales1-cogs1)/sales1)/((sales-cogs0)/sales);
+      const aqi  = (1-(ca+ppe0)/ta)/(1-(ca1+ppe1)/ta1);
+      const sgi  = sales/sales1;
+      const depi = (dep1/(ppe1+dep1))/(dep0/(ppe0+dep0));
+      const sgai = (sga0/sales)/(sga1/sales1);
+      const lvgi = ((ltd0+cl)/ta)/((ltd1+cl1)/ta1);
+      const tata = (ni0-ocf0)/ta;
+      const m = -4.84 + 0.92*dsri + 0.528*gmi + 0.404*aqi + 0.892*sgi + 0.115*depi - 0.172*sgai + 4.679*tata - 0.327*lvgi;
+      const flagged = m > -1.78;
+      out.beneish = {score:+m.toFixed(2), flagged, color: flagged?"#c0392b":"#1a8a63",
+        read:`M-Score ${m.toFixed(2)} — ${flagged?"above the -1.78 threshold Beneish's research associated with elevated manipulation risk":"below the -1.78 threshold, in the range typical of non-manipulators"}. ${flagged?"This doesn't prove anything improper — it means the pattern across receivables growth, margins, asset quality, and accruals resembles companies that later turned out to have manipulated earnings. Worth a closer read of the footnotes before trusting the headline numbers at face value.":"The combination of receivables growth, margin trend, asset quality, and accruals doesn't show the pattern associated with earnings manipulation. Not a certification of clean books — just the absence of this particular statistical red flag."}`};
+    } else {
+      out.beneish = {score:null, read:"Needs 2 years of receivables, COGS, PPE, depreciation, and SG&A data — one or more of these fields isn't available for this stock (common for financials and some non-US filers, which report balance sheets differently)."};
+    }
+  }
+
+  return out;
+}
+
+/* ============================================================
+   VALUATION EXTRAS — tangible book value and rough LBO capacity.
+   Both computed entirely from data already fetched; no new
+   pipeline needed beyond the balance-sheet fields above.
+   ============================================================ */
+function valuationExtras(s){
+  const bs = s.bsDetail;
+  const out = {tangibleBookPerShare:null, priceToTangibleBook:null, lboImpliedPrice:null, lboGapPct:null};
+  if(!bs || !s.shares) return out;
+
+  const v0=a=>(a&&a.length&&a[0]!=null)?a[0]:null;
+  const ta=v0(bs.totalAssets), tl=v0(bs.totalLiab), gi=v0(bs.goodwillIntangibles);
+  if(ta!=null&&tl!=null){
+    const tangibleEquity = ta - (gi||0) - tl;
+    out.tangibleBookPerShare = tangibleEquity / s.shares;
+    out.priceToTangibleBook = out.tangibleBookPerShare>0 ? s.price/out.tangibleBookPerShare : null;
+  }
+
+  // Rough LBO capacity: what could a financial buyer pay and still hit a
+  // 20% IRR in 5 years, assuming debt paydown from FCF and exit at the same
+  // EV/EBITDA multiple it entered at. Simplified but directionally honest.
+  const ebitda0 = s.annual?.ebitda?.[0];
+  const fcf0 = s.annual?.fcf?.[0];
+  if(ebitda0>0 && fcf0!=null && s.evEbitda){
+    const entryEv = ebitda0 * s.evEbitda;
+    const debtCapacity = ebitda0 * 4.5; // typical LBO leverage ~4-5x EBITDA
+    const equityCheck = Math.max(entryEv - debtCapacity, entryEv*0.25);
+    let debt = debtCapacity;
+    for(let y=0;y<5;y++){ debt = Math.max(0, debt - Math.max(fcf0,0)); }
+    const exitEv = entryEv; // conservative: assume flat multiple, no growth credit
+    const exitEquity = exitEv - debt;
+    const impliedEquityCheckForTargetIRR = exitEquity / Math.pow(1.20,5);
+    const impliedEv = impliedEquityCheckForTargetIRR + debtCapacity;
+    out.lboImpliedPrice = (impliedEv - s.debt) / s.shares;
+    out.lboGapPct = ((out.lboImpliedPrice - s.price)/s.price)*100;
+  }
+  return out;
+}

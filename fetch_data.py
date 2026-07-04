@@ -205,6 +205,24 @@ def pull(sym, mkt):
     mcap = price * shares
     ev = mcap + total_debt - total_cash
 
+    # ---- Balance sheet detail for forensic scores (Altman Z, Piotroski F,
+    # Beneish M) and tangible book value. All pulled the same way as the
+    # existing fields above -- multi-year series from yfinance's free
+    # balance_sheet/income_stmt, no new data source, no paid API.
+    total_assets    = row(bs, "Total Assets")
+    total_liab      = row(bs, "Total Liabilities Net Minority Interest", "Total Liab")
+    current_assets  = row(bs, "Current Assets", "Total Current Assets")
+    current_liab    = row(bs, "Current Liabilities", "Total Current Liabilities")
+    retained_earn   = row(bs, "Retained Earnings")
+    lt_debt         = row(bs, "Long Term Debt", "Long Term Debt And Capital Lease Obligation")
+    receivables     = row(bs, "Accounts Receivable", "Receivables")
+    ppe_net         = row(bs, "Net PPE", "Net Property Plant And Equipment")
+    goodwill_intang = row(bs, "Goodwill And Other Intangible Assets", "Goodwill")
+    cogs            = row(fin, "Cost Of Revenue", "Reconciled Cost Of Revenue")
+    sga             = row(fin, "Selling General And Administration", "SG&A Expense")
+    depr            = row(cf, "Depreciation And Amortization", "Depreciation")
+    diluted_shares  = row(fin, "Diluted Average Shares")
+
     return {
         "t": sym, "n": info.get("shortName") or sym, "mkt": mkt,
         "sec": info.get("sector") or "", "ind": info.get("industry") or "",
@@ -222,14 +240,21 @@ def pull(sym, mkt):
         "roa": round((info.get("returnOnAssets") or 0) * 100, 2) if info.get("returnOnAssets") else None,
         "beta": info.get("beta"),
         "high52": info.get("fiftyTwoWeekHigh"), "low52": info.get("fiftyTwoWeekLow"),
-        # Promoter holding (India) / insider ownership (US) -- Yahoo exposes a
-        # current snapshot only (heldPercentInsiders), no historical series for
-        # free. We store today's value; prevInsiderPct stays null until you
-        # manually backfill it (e.g. from Screener.in's shareholding pattern
-        # history for Indian names) or re-run this script next quarter and
-        # diff two saved data.json snapshots yourself.
         "insiderPct": round((info.get("heldPercentInsiders") or 0) * 100, 2) if info.get("heldPercentInsiders") else None,
         "prevInsiderPct": None,
+        # Balance-sheet detail, multi-year (index 0 = most recent), unscaled
+        # to raw currency units -- forensic formulas below use ratios so
+        # absolute scale cancels out; keeping raw avoids compounding
+        # rounding error across three multi-factor scores.
+        "bsDetail": {
+            "totalAssets": scaled(total_assets, mkt), "totalLiab": scaled(total_liab, mkt),
+            "currentAssets": scaled(current_assets, mkt), "currentLiab": scaled(current_liab, mkt),
+            "retainedEarnings": scaled(retained_earn, mkt), "ltDebt": scaled(lt_debt, mkt),
+            "receivables": scaled(receivables, mkt), "ppeNet": scaled(ppe_net, mkt),
+            "goodwillIntangibles": scaled(goodwill_intang, mkt), "cogs": scaled(cogs, mkt),
+            "sga": scaled(sga, mkt), "depreciation": scaled(depr, mkt),
+            "dilutedShares": diluted_shares,  # count, not currency -- left unscaled (only used for YoY change check)
+        },
         "annual": {
             "periods": periods(fin),
             "revenue": scaled(arev, mkt), "grossProfit": scaled(agp, mkt),

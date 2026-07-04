@@ -61,6 +61,12 @@ fetch("reactions.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
   if(Array.isArray(d)) REACTIONS_DATA = d; render();
 }).catch(()=>{ /* fine — track record panel shows a setup message instead */ });
 
+let ESTIMATES_DATA = {};
+fetch("estimates.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  if(Array.isArray(d)) d.forEach(rec=>{ if(rec.ticker) ESTIMATES_DATA[rec.ticker]=rec; });
+  render();
+}).catch(()=>{ /* fine — analyst outlook panel shows a setup message instead */ });
+
 function computeRows(){
   return State.data.map(s=>{
     const intrinsic = dcf(normalize(s), {discount:State.discount, termGrowth:State.termGrowth, years:10});
@@ -244,6 +250,8 @@ function renderTearsheet(t){
   <div class="panelgrid" style="margin-top:14px">
     ${renderMacroPanel(s)}
     ${renderValuationPanel(s, rows)}
+    ${renderForensicPanel(s)}
+    ${renderAnalystPanel(s)}
   </div>
 
   ${renderAskClaude(s)}
@@ -573,6 +581,7 @@ function renderMacroPanel(s){
 /* ---------- valuation in context panel ---------- */
 function renderValuationPanel(s, allRows){
   const val = valuationContext(s, allRows, MACRO_DATA);
+  const ext = valuationExtras(s);
   return `
   <div class="panel">
     <div class="panelhead"><span class="panelt">Valuation in context</span><span class="panels">vs peers &amp; risk-free rate</span></div>
@@ -581,12 +590,61 @@ function renderValuationPanel(s, allRows){
       <div class="kvrow"><span class="kvk">Sector median P/E</span><span class="kvv">${val.sectorMedianPE==null?"—":val.sectorMedianPE.toFixed(1)+"× ("+val.peerCount+" peers)"}</span></div>
       <div class="kvrow"><span class="kvk">FCF yield vs risk-free rate</span><span class="kvv" style="color:${val.fcfYieldSpread==null?'inherit':val.fcfYieldSpread>2?'var(--good)':val.fcfYieldSpread<0?'var(--warn)':'inherit'}">${val.fcfYieldSpread==null?"—":sign(val.fcfYieldSpread)+" pts"}</span></div>
       <div class="kvrow"><span class="kvk">52-week range position</span><span class="kvv">${val.pricePos==null?"—":val.pricePos.toFixed(0)+"% (0=low, 100=high)"}</span></div>
+      <div class="kvrow"><span class="kvk">Price / Tangible book</span><span class="kvv">${ext.priceToTangibleBook==null?"—":ext.priceToTangibleBook.toFixed(2)+"×"}</span></div>
+      <div class="kvrow"><span class="kvk">LBO-implied price (~20% IRR)</span><span class="kvv" style="color:${ext.lboGapPct==null?'inherit':ext.lboGapPct>15?'var(--good)':ext.lboGapPct<-15?'var(--warn)':'inherit'}">${ext.lboImpliedPrice==null?"—":fmtP(ext.lboImpliedPrice,s.mkt)+" ("+sign(ext.lboGapPct)+")"}</span></div>
     </div>
-    <p style="font-size:11.5px;color:var(--dim);margin-top:12px;line-height:1.5">FCF yield spread compares the cash return you're getting to the "safe" 10-year Treasury yield — a spread above ~2 points means you're being paid extra for equity risk; below zero means bonds currently pay more than this business's cash yield.</p>
+    <p style="font-size:11.5px;color:var(--dim);margin-top:12px;line-height:1.5">FCF yield spread compares the cash return you're getting to the "safe" 10-year Treasury yield. Tangible book strips out goodwill/intangibles — what's left if you sold the hard assets. LBO-implied price is a rough estimate of what a financial buyer could pay today and still hit a 20% annual return in 5 years, assuming ~4.5x EBITDA debt paydown from free cash flow and an unchanged exit multiple — a simplified, directional read, not a real banker's model.</p>
   </div>`;
 }
 
-/* ---------- earnings track record panel ---------- */
+/* ---------- forensic scores panel ---------- */
+function renderForensicPanel(s){
+  const F = forensicScores(s);
+  const row=(label,m,scoreTxt)=>`
+    <div style="border-bottom:1px solid var(--line);padding:10px 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <b style="font-size:13px">${label}</b>
+        <span style="font-weight:800;font-size:13px;color:${m.color||'var(--dim)'}">${scoreTxt}</span>
+      </div>
+      <p style="font-size:12px;color:#444;line-height:1.55;margin:5px 0 0">${m.read}</p>
+    </div>`;
+  return `
+  <div class="panel">
+    <div class="panelhead"><span class="panelt">Forensic scores</span><span class="panels">Altman Z · Piotroski F · Beneish M</span></div>
+    ${row("Altman Z-Score (bankruptcy risk)", F.altman, F.altman.score==null?"—":F.altman.score+" · "+F.altman.zone)}
+    ${row("Piotroski F-Score (fundamental trajectory)", F.piotroski, F.piotroski.score==null?"—":F.piotroski.score+"/"+F.piotroski.possible)}
+    ${row("Beneish M-Score (manipulation risk)", F.beneish, F.beneish.score==null?"—":F.beneish.score+(F.beneish.flagged?" ⚑":""))}
+    <p style="font-size:10.5px;color:var(--dim);margin-top:10px;line-height:1.5">Three public, academically-documented formulas computed from real balance sheet data (not approximated). None of these are predictions — they're statistical pattern-matches against historical distress/manipulation cases. Needs 2 years of balance sheet history; if a score shows "—", that history isn't available yet for this stock.</p>
+  </div>`;
+}
+
+/* ---------- analyst outlook panel ---------- */
+function renderAnalystPanel(s){
+  const E = ESTIMATES_DATA[s.t];
+  if(!E){
+    return `<div class="panel"><div class="panelhead"><span class="panelt">Analyst outlook</span></div>
+      <p style="font-size:12.5px;color:var(--dim);line-height:1.6">Not loaded yet. Run <code>python fetch_estimates.py</code> locally (free, no API key) to activate consensus growth estimates, revision trends, and price targets for ${s.t}.</p></div>`;
+  }
+  const revColor = v=>v==null?'inherit':v>2?'var(--good)':v<-2?'var(--warn)':'inherit';
+  const targetGap = E.priceTargetMean!=null ? ((E.priceTargetMean-s.price)/s.price*100) : null;
+  const totalRecs = (E.recStrongBuy||0)+(E.recBuy||0)+(E.recHold||0)+(E.recSell||0)+(E.recStrongSell||0);
+  return `
+  <div class="panel">
+    <div class="panelhead"><span class="panelt">Analyst outlook</span><span class="panels">consensus estimates · free via Yahoo</span></div>
+    <div class="kv">
+      <div class="kvrow"><span class="kvk">EPS growth est. (this year)</span><span class="kvv" style="color:${revColor(E.epsGrowthCurrentYear)}">${E.epsGrowthCurrentYear==null?"—":sign(E.epsGrowthCurrentYear)}</span></div>
+      <div class="kvrow"><span class="kvk">EPS growth est. (next year)</span><span class="kvv" style="color:${revColor(E.epsGrowthNextYear)}">${E.epsGrowthNextYear==null?"—":sign(E.epsGrowthNextYear)}</span></div>
+      <div class="kvrow"><span class="kvk">Estimate revision (30d)</span><span class="kvv" style="color:${revColor(E.estimateRevision30d)}">${E.estimateRevision30d==null?"—":sign(E.estimateRevision30d)}</span></div>
+      <div class="kvrow"><span class="kvk">Estimate revision (90d)</span><span class="kvv" style="color:${revColor(E.estimateRevision90d)}">${E.estimateRevision90d==null?"—":sign(E.estimateRevision90d)}</span></div>
+      <div class="kvrow"><span class="kvk">Analyst price target (mean)</span><span class="kvv">${E.priceTargetMean==null?"—":fmtP(E.priceTargetMean,s.mkt)+" ("+sign(targetGap)+" vs current)"}</span></div>
+      <div class="kvrow"><span class="kvk">Analysts covering</span><span class="kvv" style="color:${E.numAnalysts!=null&&E.numAnalysts<5?'var(--warn)':'inherit'}">${E.numAnalysts==null?"—":E.numAnalysts}${E.numAnalysts!=null&&E.numAnalysts<5?" ⚑ thin":""}</span></div>
+    </div>
+    ${totalRecs>0?`<div style="margin-top:10px;font-size:11.5px;color:var(--dim)">Recommendations: ${E.recStrongBuy||0} strong buy · ${E.recBuy||0} buy · ${E.recHold||0} hold · ${E.recSell||0} sell · ${E.recStrongSell||0} strong sell</div>`:""}
+    <p style="font-size:10.5px;color:var(--dim);margin-top:10px;line-height:1.5">Revision trend matters more than the absolute estimate — analysts raising numbers over the last 30-90 days is one of the more empirically predictive short-term signals available. Compare against the Veteran's Lens "implied growth" (what the price assumes) for a three-way triangulation: trailing actual, market-implied, and analyst-expected.${E.numAnalysts!=null&&E.numAnalysts<5?` <b style="color:var(--warn)">Coverage is thin (${E.numAnalysts} analysts)</b> — a single upgrade or downgrade can swing this "trend" on its own. Weight it much less than the same reading on a widely-covered stock.`:""}</p>
+  </div>`;
+}
+
+
 function renderTrackRecord(s){
   const rec = REACTIONS_DATA.find(r=>r.ticker===s.t);
   if(!rec || !rec.returns || !rec.returns.length){
