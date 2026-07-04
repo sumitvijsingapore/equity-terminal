@@ -6,7 +6,7 @@
    data. For genuine authentication, see README.md.
    ============================================================ */
 (function(){
-  const PASSCODE = "letmein"; // <-- change this to your own passcode
+  const PASSCODE = "Powerful@81"; // <-- change this to your own passcode
   const SESSION_KEY = "terminal_unlocked";
 
   if (sessionStorage.getItem(SESSION_KEY) === "yes") return; // already unlocked this session
