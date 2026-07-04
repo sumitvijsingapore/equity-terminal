@@ -113,7 +113,7 @@ function renderHeader(){
   return `
   <header class="app">
     <div class="headrow">
-      <span class="brand"><span class="dot">▮▮</span> TERMINAL</span>
+      <span class="brand" data-home style="cursor:pointer"><span class="dot">▮▮</span> TERMINAL</span>
       <div class="tabs">
         <button data-tab="stocks" class="${State.tab==='stocks'?'on':''}">Stocks</button>
         <button data-tab="sectors" class="${State.tab==='sectors'?'on':''}">Sectors &amp; cycles</button>
@@ -1501,6 +1501,8 @@ function wireEvents(){
   const root = document.getElementById("root");
 
   root.querySelectorAll("[data-tab]").forEach(el=>el.onclick=()=>{State.tab=el.dataset.tab;State.sel=null;render();});
+  const homeLink=root.querySelector("[data-home]");
+  if(homeLink) homeLink.onclick=()=>{State.tab="stocks";State.sel=null;State.preset="all";State.mkt="ALL";State.capTier="ALL";State.q="";render();window.scrollTo(0,0);};
   const watchToggle=document.getElementById("watchToggle");
   if(watchToggle) watchToggle.onclick=()=>{State.showWatchlist=!State.showWatchlist;render();};
 
