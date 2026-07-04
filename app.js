@@ -158,7 +158,20 @@ function filteredRows(){
 
 function clr(v){ return v==null?"#6b6b68":v>0?"var(--good)":"var(--warn)"; }
 
+function globalSearchMatches(query, limit=7){
+  const q = query.trim().toLowerCase();
+  if(!q) return [];
+  const starts = [], contains = [];
+  State.data.forEach(s=>{
+    const t = s.t.toLowerCase(), n = (s.n||"").toLowerCase();
+    if(t.startsWith(q)) starts.push(s);
+    else if(t.includes(q) || n.includes(q)) contains.push(s);
+  });
+  return [...starts, ...contains].slice(0, limit);
+}
+
 function renderHeader(){
+  const matches = globalSearchMatches(State.q);
   return `
   <header class="app">
     <div class="headrow">
@@ -170,6 +183,18 @@ function renderHeader(){
         <button data-tab="playbook" class="${State.tab==='playbook'?'on':''}">Playbook</button>
         <button data-tab="learn" class="${State.tab==='learn'?'on':''}">Learn</button>
         <button data-tab="veteran" class="${State.tab==='veteran'?'on':''}">Veteran's Lens</button>
+      </div>
+      <div style="position:relative;flex:1;min-width:160px;max-width:260px">
+        <input class="search" id="globalSearchBox" placeholder="Jump to any stock…" value="${State.q}" style="width:100%"/>
+        ${matches.length?`
+        <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel);border:1px solid var(--line);
+          border-radius:8px;box-shadow:0 8px 24px rgba(20,20,18,.12);z-index:50;overflow:hidden;max-height:320px;overflow-y:auto">
+          ${matches.map(s=>`
+            <div data-jumpto="${s.t}" style="padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)">
+              <span><b style="font-size:13px">${s.t}</b> <span style="font-size:12px;color:var(--dim)">${s.n}</span></span>
+              <span style="font-size:11px;color:var(--dim);flex-shrink:0">${s.mkt==="US"?"S&P":"Nifty"}</span>
+            </div>`).join("")}
+        </div>`:""}
       </div>
       <button class="watchbtn" id="watchToggle">★ Watchlist (${State.watchlist.length})</button>
       <span class="livebadge ${State.live?'live':'sample'}">${State.live?'● LIVE · YAHOO':'● SAMPLE DATA'} · ${State.data.length} names</span>
@@ -245,8 +270,7 @@ function renderScreener(){
     <div class="seg">
       ${[["ALL","All sizes"],["mega","Mega cap"],["large","Large cap"],["mid","Mid cap"]].map(([k,l])=>`<button data-cap="${k}" class="${State.capTier===k?'on':''}">${l}</button>`).join("")}
     </div>
-    <input class="search" id="searchBox" placeholder="Search ticker or name…" value="${State.q}"/>
-  </div>
+    </div>
   ${renderFilterRow()}
   <div style="overflow-x:auto">
   <table class="grid">
@@ -1729,8 +1753,20 @@ function wireEvents(){
   });
   root.querySelectorAll("[data-filterlogic]").forEach(el=>el.onclick=()=>{State.filterLogic=el.dataset.filterlogic;render();});
   root.querySelectorAll("[data-sort]").forEach(el=>el.onclick=()=>{State.sort=el.dataset.sort;render();});
-  const searchBox=document.getElementById("searchBox");
-  if(searchBox){ searchBox.oninput=e=>{State.q=e.target.value;render();}; searchBox.focus(); searchBox.setSelectionRange(State.q.length,State.q.length); }
+  const globalSearchBox=document.getElementById("globalSearchBox");
+  if(globalSearchBox){
+    globalSearchBox.oninput=e=>{State.q=e.target.value;render();};
+    globalSearchBox.onkeydown=e=>{
+      if(e.key==="Enter"){
+        const matches=globalSearchMatches(State.q,1);
+        if(matches.length){ State.sel=matches[0].t; State.tab="stocks"; State.q=""; render(); }
+      } else if(e.key==="Escape"){ State.q=""; render(); }
+    };
+    globalSearchBox.focus(); globalSearchBox.setSelectionRange(State.q.length,State.q.length);
+  }
+  root.querySelectorAll("[data-jumpto]").forEach(el=>el.onclick=()=>{
+    State.sel=el.dataset.jumpto; State.tab="stocks"; State.q=""; State.kpiExpanded=false; render();
+  });
 
   root.querySelectorAll("[data-open]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-star]')||e.target.closest('[data-cmp]'))return; State.sel=el.dataset.open;State.tab="stocks";State.kpiExpanded=false;render();});
   root.querySelectorAll("[data-opensector]").forEach(el=>el.onclick=()=>{ if(el.dataset.opensector){State.sel=el.dataset.opensector;State.tab="stocks";render();}});
