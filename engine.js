@@ -454,7 +454,7 @@ function pillarScores(s){
     if(s.pricePos!=null&&s.pricePos<25 && s.revG!=null&&s.revG>0 && s.fcfNi!=null&&s.fcfNi>=0.9)e.push(_ev(`Price weak but fundamentals sound — price/fundamentals divergence`,10));
     if(s.pricePos!=null&&s.pricePos>85 && s.revDecel!=null&&s.revDecel<0)e.push(_ev(`Price at highs while growth decelerates — momentum outrunning fundamentals`,-10));
     if(s.revQ!=null&&s.niQ!=null&&s.revQ>2&&s.niQ>s.revQ*1.5)e.push(_ev(`Latest quarter profit outpacing sales — early positive inflection`,8));
-    P.momentum = _mkPillar("Momentum", 50, e); }
+    P.momentum = _mkPillar("Price vs Fundamentals", 50, e); }
   return P;
 }
 
@@ -495,10 +495,10 @@ function crossLinkages(s, P){
     else add("Return authenticity","Are the returns real or leverage?","Returns","Balance sheet","Weak returns","#c0392b","Returns on capital are below what the risk justifies.","Capital is being consumed rather than compounded here."); }
 
   { const v=P.valuation.score, m=P.momentum.score;
-    if(v>=60&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Recognized value","#1a8a63","Undervalued on fundamentals AND price action has started confirming — the market may be catching on.","Often the best entry window: the discount exists but the downtrend has stopped.");
-    else if(v>=60&&m<45)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Falling knife or hidden gem","#b8860b","Cheap on fundamentals but the market keeps selling — someone disagrees with the numbers.","Do NOT assume the market is wrong. Check recent news and whether insiders are buying the dip before acting.");
-    else if(v<45&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","Momentum-carried","#b8860b","Price strength without valuation support — running on narrative and flows.","Can continue longer than seems rational, but risk/reward is asymmetric. Size accordingly if at all.");
-    else add("Price vs perception","What is the market missing or overdoing?","Valuation","Momentum","No support either way","#c0392b","Neither cheap nor showing positive price behavior.","No edge visible from either angle right now."); }
+    if(v>=60&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Price vs Fundamentals","Recognized value","#1a8a63","Undervalued on fundamentals AND price action has started confirming — the market may be catching on.","Often the best entry window: the discount exists but the downtrend has stopped.");
+    else if(v>=60&&m<45)add("Price vs perception","What is the market missing or overdoing?","Valuation","Price vs Fundamentals","Falling knife or hidden gem","#b8860b","Cheap on fundamentals but the market keeps selling — someone disagrees with the numbers.","Do NOT assume the market is wrong. Check recent news and whether insiders are buying the dip before acting.");
+    else if(v<45&&m>=55)add("Price vs perception","What is the market missing or overdoing?","Valuation","Price vs Fundamentals","Price-carried, fundamentals lag","#b8860b","Price strength without valuation support — running on narrative and flows.","Can continue longer than seems rational, but risk/reward is asymmetric. Size accordingly if at all.");
+    else add("Price vs perception","What is the market missing or overdoing?","Valuation","Price vs Fundamentals","No support either way","#c0392b","Neither cheap nor showing positive price behavior.","No edge visible from either angle right now."); }
 
   { const o=P.ownership.score;
     const fundAvg=(P.growth.score+P.cashQuality.score)/2;
@@ -847,7 +847,7 @@ function dataIntegrityChecks(s, verifyUS, verifyIN){
   /* ---------- always-on internal consistency (no fetch needed) ---------- */
   if(s.high52!=null && s.price>0 && s.high52/s.price>2.2){
     add("warn","52-week high looks implausible",
-      `52-week high (${fmtP(s.high52,s.mkt)}) is ${(s.high52/s.price).toFixed(1)}× the current price. This pattern typically means a demerger, stock split, or bonus issue happened during the window and the historical price wasn't adjusted for it — not that the stock actually fell this far. Treat the 52-week range position (and anything derived from it, like the Momentum pillar) with caution for this stock specifically.`);
+      `52-week high (${fmtP(s.high52,s.mkt)}) is ${(s.high52/s.price).toFixed(1)}× the current price. This pattern typically means a demerger, stock split, or bonus issue happened during the window and the historical price wasn't adjusted for it — not that the stock actually fell this far. Treat the 52-week range position (and anything derived from it, like the Price vs Fundamentals pillar) with caution for this stock specifically.`);
   }
   if(s.low52!=null && s.price>0 && s.price/s.low52>3){
     add("info","52-week low sits far below current price",
