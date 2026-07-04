@@ -23,6 +23,10 @@ const State = {
   showWatchlist: false,
   watchlist: JSON.parse(localStorage.getItem("terminal_watchlist")||"[]"),
   compare: [],
+  filters: { sectors: [], revG:{min:null,max:null}, fcfG:{min:null,max:null}, pe:{min:null,max:null},
+             mos:{min:null,max:null}, health:{min:null,max:null}, mcap:{min:null,max:null} },
+  filterLogic: "AND",
+  filtersOpen: true,
   playbookCat: "all",
   playbookMkt: "ALL",
   playbookOpen: null,
@@ -107,6 +111,33 @@ const PRESETS=[
    test:s=>State.watchlist.includes(s.t)},
 ];
 
+function distinctSectors(){
+  return [...new Set(State.data.map(s=>s.sec).filter(Boolean))].sort();
+}
+
+function advancedFilterActive(){
+  const F = State.filters;
+  return F.sectors.length>0 || ["revG","fcfG","pe","mos","health","mcap"].some(k=>F[k].min!=null||F[k].max!=null);
+}
+
+function passesRange(val, range){
+  if(range.min==null && range.max==null) return null; // inactive
+  if(val==null) return false;
+  if(range.min!=null && val<range.min) return false;
+  if(range.max!=null && val>range.max) return false;
+  return true;
+}
+
+function passesAdvancedFilters(s){
+  const F = State.filters;
+  const preds = [];
+  if(F.sectors.length>0) preds.push(F.sectors.includes(s.sec));
+  const fields = [["revG","revG"],["fcfG","fcfG"],["pe","pe"],["mos","mos"],["health","healthScore"],["mcap","mcap"]];
+  fields.forEach(([fk,sk])=>{ const r=passesRange(s[sk], F[fk]); if(r!==null) preds.push(r); });
+  if(preds.length===0) return true;
+  return State.filterLogic==="AND" ? preds.every(Boolean) : preds.some(Boolean);
+}
+
 function filteredRows(){
   let rows = computeRows();
   const preset = PRESETS.find(p=>p.id===State.preset) || PRESETS[0];
@@ -114,7 +145,7 @@ function filteredRows(){
     (State.mkt==="ALL"||s.mkt===State.mkt) &&
     (State.capTier==="ALL"||capTierOf(s)===State.capTier) &&
     (State.q===""||s.t.toLowerCase().includes(State.q.toLowerCase())||s.n.toLowerCase().includes(State.q.toLowerCase())) &&
-    preset.test(s)
+    preset.test(s) && passesAdvancedFilters(s)
   );
   const dir = {health:-1,mcap:-1,revG:-1,fcfG:-1,mos:-1,roe:-1,pe:1}[State.sort] || -1;
   rows.sort((a,b)=>{
@@ -153,6 +184,54 @@ function renderPresets(){
     </button>`).join("")}</div>`;
 }
 
+function renderFilterRow(){
+  const sectors = distinctSectors();
+  const F = State.filters;
+  const activeCount = (F.sectors.length>0?1:0) +
+    ["revG","fcfG","pe","mos","health","mcap"].filter(k=>F[k].min!=null||F[k].max!=null).length;
+  const numFilters = [
+    ["revG","Rev YoY %","-50","200"],["fcfG","FCF YoY %","-50","200"],
+    ["pe","P/E","0","100"],["mos","DCF gap %","-100","100"],
+    ["health","Score","0","100"],["mcap","Mkt cap","0",""],
+  ];
+  return `
+  <div class="panel" style="margin-bottom:16px;padding:0">
+    <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" data-filterstoggle>
+      <span style="font-weight:700;font-size:13.5px">${State.filtersOpen?"▾":"▸"} Filters${activeCount>0?` <span class="pill good" style="margin-left:6px">${activeCount} active</span>`:""}</span>
+      ${activeCount>0?`<button class="preset" data-clearfilters style="padding:4px 10px;font-size:12px">Clear all</button>`:""}
+    </div>
+    ${State.filtersOpen?`
+    <div style="padding:0 16px 16px;border-top:1px solid var(--line)">
+      <div style="margin-top:14px;margin-bottom:6px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Sector (select any)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
+        ${sectors.map(sec=>`<button class="preset ${F.sectors.includes(sec)?'on':''}" data-sectorchip="${sec}" style="padding:5px 11px;font-size:12.5px">${sec}</button>`).join("")}
+      </div>
+      <div style="margin-bottom:6px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Numeric ranges (leave blank = no limit)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px">
+        ${numFilters.map(([k,label,phMin,phMax])=>`
+          <div>
+            <div style="font-size:12px;color:#444;margin-bottom:4px">${label}</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" data-numfilter="${k}" data-bound="min" placeholder="${phMin}" value="${F[k].min??''}"
+                style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px"/>
+              <span style="color:var(--dim);font-size:11px">to</span>
+              <input type="number" data-numfilter="${k}" data-bound="max" placeholder="${phMax}" value="${F[k].max??''}"
+                style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px"/>
+            </div>
+          </div>`).join("")}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:#444">Combine filters with:</span>
+        <div class="seg">
+          <button data-filterlogic="AND" class="${State.filterLogic==='AND'?'on':''}">Match ALL (AND)</button>
+          <button data-filterlogic="OR" class="${State.filterLogic==='OR'?'on':''}">Match ANY (OR)</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--dim);margin:10px 0 0;line-height:1.5">Sector selections always combine with each other as OR (pick any of several sectors). The AND/OR toggle governs how sector + numeric-range filters combine with one another. Market, cap-size, search, and preset filters above always apply as AND regardless of this setting.</p>
+    </div>`:""}
+  </div>`;
+}
+
 function renderScreener(){
   const rows = filteredRows();
   const cols=[["t","Ticker"],["mcap","Mkt cap"],["price","Price"],["revG","Rev YoY"],
@@ -168,6 +247,7 @@ function renderScreener(){
     </div>
     <input class="search" id="searchBox" placeholder="Search ticker or name…" value="${State.q}"/>
   </div>
+  ${renderFilterRow()}
   <div style="overflow-x:auto">
   <table class="grid">
     <thead><tr>
@@ -1625,6 +1705,29 @@ function wireEvents(){
   root.querySelectorAll("[data-preset]").forEach(el=>el.onclick=()=>{State.preset=el.dataset.preset;render();});
   root.querySelectorAll("[data-mkt]").forEach(el=>el.onclick=()=>{State.mkt=el.dataset.mkt;render();});
   root.querySelectorAll("[data-cap]").forEach(el=>el.onclick=()=>{State.capTier=el.dataset.cap;render();});
+
+  const filtersToggle = root.querySelector("[data-filterstoggle]");
+  if(filtersToggle) filtersToggle.onclick=(e)=>{ if(e.target.closest('[data-clearfilters]'))return; State.filtersOpen=!State.filtersOpen;render();};
+  const clearFiltersBtn = root.querySelector("[data-clearfilters]");
+  if(clearFiltersBtn) clearFiltersBtn.onclick=(e)=>{ e.stopPropagation();
+    State.filters = { sectors:[], revG:{min:null,max:null}, fcfG:{min:null,max:null}, pe:{min:null,max:null},
+      mos:{min:null,max:null}, health:{min:null,max:null}, mcap:{min:null,max:null} };
+    render(); };
+  root.querySelectorAll("[data-sectorchip]").forEach(el=>el.onclick=()=>{
+    const sec = el.dataset.sectorchip;
+    const i = State.filters.sectors.indexOf(sec);
+    if(i>=0) State.filters.sectors.splice(i,1); else State.filters.sectors.push(sec);
+    render();
+  });
+  root.querySelectorAll("[data-numfilter]").forEach(el=>{
+    el.onchange=(e)=>{
+      const k=el.dataset.numfilter, bound=el.dataset.bound;
+      const v = e.target.value.trim()==="" ? null : parseFloat(e.target.value);
+      State.filters[k][bound] = (v!=null && isNaN(v)) ? null : v;
+      render();
+    };
+  });
+  root.querySelectorAll("[data-filterlogic]").forEach(el=>el.onclick=()=>{State.filterLogic=el.dataset.filterlogic;render();});
   root.querySelectorAll("[data-sort]").forEach(el=>el.onclick=()=>{State.sort=el.dataset.sort;render();});
   const searchBox=document.getElementById("searchBox");
   if(searchBox){ searchBox.oninput=e=>{State.q=e.target.value;render();}; searchBox.focus(); searchBox.setSelectionRange(State.q.length,State.q.length); }
