@@ -110,3 +110,164 @@ const CYCLE_PHASES=[
   {ph:"Late cycle",desc:"Growth strong but peaking, inflation/rates rising.",lead:["Energy","Materials","Staples"],lag:["Discretionary","Real estate"]},
   {ph:"Slowdown / recession",desc:"Growth contracting, rates being cut.",lead:["Consumer staples","Healthcare","Utilities","Gold"],lag:["Financials","Industrials","Discretionary"]},
 ];
+
+/* ============================================================
+   COMBINATIONS PLAYBOOK — named, multi-metric patterns an analyst
+   actually looks for, each with a formula, meaning, and a live
+   test function run against every stock's already-computed fields
+   (from analyze() in engine.js). No new data needed — pure
+   cross-referencing of what's already on the tearsheet.
+   ============================================================ */
+/* helper: where does this stock's P/E rank within its own sector (0=cheapest, 1=priciest) */
+function sectorPEQuartile(stock, rows){
+  if(!rows || stock.pe==null || stock.pe<=0) return null;
+  const peers = rows.filter(s=>s.sec===stock.sec && s.pe!=null && s.pe>0 && s.pe<200);
+  if(peers.length<3) return null;
+  const sorted = peers.map(s=>s.pe).sort((a,b)=>a-b);
+  const rank = sorted.filter(pe=>pe<=stock.pe).length;
+  return rank / sorted.length;
+}
+
+const PLAYBOOK = [
+  /* ---------------- GROWTH QUALITY ---------------- */
+  {id:"compounder", cat:"Growth quality", name:"The Compounder",
+   formula:"Revenue YoY > 10%  AND  FCF YoY > 10%  AND  margin trend ≥ 0",
+   meaning:"Revenue and cash flow are growing together at double digits, without sacrificing margin. This is the cleanest, highest-quality growth pattern that exists — the business is scaling without losing efficiency.",
+   read:"When you find this, the main risk isn't the business — it's overpaying. Check the DCF gap and sector-relative P/E before acting; a great compounder at a rich price can still be a poor trade.",
+   test:s=>s.revG!=null&&s.revG>10 && s.fcfG!=null&&s.fcfG>10 && (s.marginTrend==null||s.marginTrend>=0)},
+
+  {id:"mirage", cat:"Growth quality", name:"The Growth Mirage",
+   formula:"Revenue YoY > 8%  AND  FCF YoY < 0",
+   meaning:"Sales are climbing but cash generation is going the other way. Revenue can be booked before cash arrives — this pattern usually means receivables are building, inventory is piling up, or capex has quietly ramped.",
+   read:"Not automatically bad — could be a deliberate investment phase. But if this persists more than 2-3 quarters, the 'growth' is optical rather than real. Check the Cash Bridge chart to see exactly where the gap comes from.",
+   test:s=>s.revG!=null&&s.revG>8 && s.fcfG!=null&&s.fcfG<0},
+
+  {id:"decel_trap", cat:"Growth quality", name:"The Deceleration Trap",
+   formula:"Revenue growth still positive  AND  Rev growth Δ < -5pts  AND  P/E in top half of sector",
+   meaning:"Still growing, but the growth rate is visibly slowing, while the market is still paying a premium multiple as if the old growth rate will continue.",
+   read:"Markets price the change in growth, not the growth itself. This is the single most common trigger for a expensive stock re-rating down, even while headline growth stays positive. High risk of disappointment at the next print.",
+   test:s=>s.revG!=null&&s.revG>0 && s.revDecel!=null&&s.revDecel<-5 && s.pe!=null&&s.pe>25},
+
+  {id:"leverage_engine", cat:"Growth quality", name:"Operating Leverage Engine",
+   formula:"Revenue YoY > 5%  AND  operating margin trend > +1.5pts",
+   meaning:"Costs are growing meaningfully slower than revenue — the classic signature of a business getting more profitable simply by getting bigger, with no change in strategy needed.",
+   read:"This tends to compound: once leverage kicks in, it often continues for several quarters as fixed costs stay flat. Worth checking how many more quarters of this runway plausibly remain before margins normalize.",
+   test:s=>s.revG!=null&&s.revG>5 && s.opMarginTrend!=null&&s.opMarginTrend>1.5},
+
+  /* ---------------- CASH & EARNINGS QUALITY ---------------- */
+  {id:"cash_king", cat:"Cash & earnings quality", name:"Cash King",
+   formula:"FCF/NI > 1.2  AND  FCF yield > 6%  AND  net debt < 0 (net cash)",
+   meaning:"Profit is more than fully backed by cash, that cash is a large fraction of the market price, and there's no debt dragging on the balance sheet. This is about as clean a cash profile as exists.",
+   read:"These businesses can fund buybacks, dividends, or acquisitions entirely from their own operations. The question becomes capital allocation skill, not survival — check what management actually does with the cash.",
+   test:s=>s.fcfNi!=null&&s.fcfNi>1.2 && s.fcfYield!=null&&s.fcfYield>6 && s.debt<0},
+
+  {id:"earnings_mirage", cat:"Cash & earnings quality", name:"Earnings Mirage",
+   formula:"Net income YoY > 5%  AND  FCF/NI < 0.7",
+   meaning:"Reported profit is growing, but only about 70 cents of every accounting dollar shows up as real cash. The earnings growth may be partly built on non-cash items or aggressive recognition.",
+   read:"This is one of the more reliable predictors of a future earnings disappointment or restatement. Treat the P/E on this stock with real skepticism — it's priced off a profit number that isn't fully real yet.",
+   test:s=>s.niG!=null&&s.niG>5 && s.fcfNi!=null&&s.fcfNi<0.7},
+
+  {id:"self_funding", cat:"Cash & earnings quality", name:"Self-Funding Compounder",
+   formula:"FCF > 3× Capex  AND  ROE > 15%",
+   meaning:"The business generates several times what it spends on maintaining and growing itself, while also earning strong returns on shareholder capital. It doesn't need debt or new shares to fund its own growth.",
+   read:"Structurally the most independent kind of company — immune to a shut credit market or a weak IPO window. Worth a premium multiple relative to a similar business that depends on external financing.",
+   test:s=>{const A=s.annual; const capex0=A?.capex?.[0]; const fcf0=A?.fcf?.[0]; return capex0&&fcf0&&Math.abs(capex0)>0 && (fcf0/Math.abs(capex0))>3 && s.roe!=null&&s.roe>15;}},
+
+  /* ---------------- VALUATION CROSS ---------------- */
+  {id:"qfp2", cat:"Valuation cross", name:"Quality at a Fair Price",
+   formula:"ROE > 18%  AND  FCF/NI ≥ 0.9  AND  DCF gap > 10%  AND  FCF growing",
+   meaning:"A genuinely good business — strong returns, real cash backing — trading below its own estimated intrinsic value while still growing. The rare overlap of 'great' and 'cheap.'",
+   read:"This combination is uncommon by design; markets are usually decent at pricing obvious quality fairly. When it appears, ask what the market is worried about that the numbers don't yet show — sometimes it's a real, temporary concern worth understanding before buying.",
+   test:s=>s.roe!=null&&s.roe>18 && (s.fcfNi==null||s.fcfNi>=0.9) && (s.debtToEbitda==null||s.debtToEbitda<2.5) && s.mos!=null&&s.mos>10 && s.fcfG!=null&&s.fcfG>0},
+
+  {id:"value_trap", cat:"Valuation cross", name:"Value Trap Warning",
+   formula:"P/E in bottom quartile of sector  AND  Revenue YoY < 0  AND  FCF YoY < 0",
+   meaning:"Looks statistically cheap, but both the top line and cash generation are shrinking. Cheap for a reason, not cheap by accident — the classic value trap pattern.",
+   read:"A low multiple on a shrinking business often gets cheaper, not more expensive, because the E in P/E keeps falling too. Verify there's a specific, identifiable turnaround catalyst before treating this as opportunity rather than decline.",
+   test:(s,ctx)=>{ if(s.pe==null||s.pe<=0) return false; const q=sectorPEQuartile(s,ctx.rows); return q!=null&&q<=0.25 && s.revG!=null&&s.revG<0 && s.fcfG!=null&&s.fcfG<0; }},
+
+  {id:"priced_perfection", cat:"Valuation cross", name:"Priced for Perfection",
+   formula:"DCF gap < -25%  AND  Rev growth Δ < 0  AND  P/E in top quartile of sector",
+   meaning:"Trading well above estimated intrinsic value, growth is already decelerating, and the market multiple assumes flawless continued execution.",
+   read:"The risk here is asymmetric — limited extra upside if things go right, sharp downside if they go merely okay instead of great. Worth explicitly asking: what does the current price require to be true for the next 3 years?",
+   test:(s,ctx)=>{ const q=sectorPEQuartile(s,ctx.rows); return s.mos!=null&&s.mos<-25 && s.revDecel!=null&&s.revDecel<0 && q!=null&&q>=0.75; }},
+
+  {id:"hidden_compounder", cat:"Valuation cross", name:"Hidden Compounder",
+   formula:"P/E in bottom half of sector  AND  ROE > 18%  AND  FCF growing",
+   meaning:"Earning strong returns on capital, with cash flow still expanding, yet priced below sector-typical multiples. Either overlooked, or the market has a concern not yet visible in the numbers.",
+   read:"Worth a full Stage 3 deep-dive (see the tutorial) specifically to figure out which of those two it is. If the concern turns out to be temporary or already-priced-in, this is exactly the setup where patient capital gets rewarded.",
+   test:(s,ctx)=>{ const q=sectorPEQuartile(s,ctx.rows); return s.roe!=null&&s.roe>18 && s.fcfG!=null&&s.fcfG>0 && q!=null&&q<=0.5; }},
+
+  {id:"garp", cat:"Valuation cross", name:"Growth at a Reasonable Price",
+   formula:"PEG < 1.0  AND  Revenue YoY > 10%",
+   meaning:"The P/E is low relative to how fast earnings are actually growing — you're not paying a premium for the growth you're getting, a classic GARP setup.",
+   read:"PEG is only as good as the growth estimate behind it — make sure the growth rate used is sustainable, not one unusually strong quarter. Avoid leaning on this signal for cyclicals or financials, where PEG is less meaningful.",
+   test:s=>s.peg!=null&&s.peg<1 && s.revG!=null&&s.revG>10},
+
+  /* ---------------- BALANCE SHEET & RETURNS ---------------- */
+  {id:"fortress", cat:"Balance sheet & returns", name:"Fortress Compounder",
+   formula:"Net cash (debt < 0)  AND  ROE > 20%  AND  FCF growing",
+   meaning:"No debt, strong returns on capital, and cash generation still expanding. Maximum resilience combined with genuine quality — a company that controls its own destiny in any environment.",
+   read:"These names tend to underperform in speculative, risk-on rallies (nothing to lever up) and meaningfully outperform in downturns and credit crunches. Useful as a core holding precisely because it needs the least monitoring.",
+   test:s=>s.debt<0 && s.roe!=null&&s.roe>20 && s.fcfG!=null&&s.fcfG>0},
+
+  {id:"leveraged_fragility", cat:"Balance sheet & returns", name:"Leveraged Fragility",
+   formula:"Net debt/EBITDA > 3.5×  AND  FCF YoY < 0  AND  margin trend < 0",
+   meaning:"High debt load, shrinking cash flow, and compressing margins — all three moving the wrong direction at once. Each alone is manageable; together they compound risk quickly.",
+   read:"This is the profile that precedes real financial distress if it continues. Check covenant language if available, and treat any further deterioration as a serious warning rather than noise.",
+   test:s=>s.debtToEbitda!=null&&s.debtToEbitda>3.5 && s.fcfG!=null&&s.fcfG<0 && s.marginTrend!=null&&s.marginTrend<0},
+
+  {id:"borrowed_returns", cat:"Balance sheet & returns", name:"Borrowed Returns",
+   formula:"ROE > 15%  AND  ROA < 3%  AND  net debt > 0",
+   meaning:"Return on equity looks strong, but return on total assets is thin — the gap is leverage doing the work, not the underlying operations.",
+   read:"Normal and expected for banks (don't flag this for financials). For a non-financial company, this means the 'quality' implied by ROE alone is partly manufactured — check ROA directly rather than trusting ROE in isolation.",
+   test:s=>s.roe!=null&&s.roe>15 && s.roa!=null&&s.roa<3 && s.debt>0 && s.sec!=="Financial Services" && s.sec!=="Fin"},
+
+  /* ---------------- OWNERSHIP & SENTIMENT ---------------- */
+  {id:"insider_conviction", cat:"Ownership & sentiment", name:"Insider Conviction",
+   formula:"Insider/promoter stake rising  AND  FCF growing  AND  DCF gap > 0",
+   meaning:"The people who know the business best are buying more of it with their own money, cash flow is expanding, and the stock is trading below estimated value. Three independent positive signals pointing the same direction.",
+   read:"Insider buying is one of the highest-conviction signals available precisely because it's costly and voluntary. Combined with cash growth and a valuation cushion, this is close to the strongest setup the dashboard can surface.",
+   test:s=>s.insiderTrend!=null&&s.insiderTrend>1 && s.fcfG!=null&&s.fcfG>0 && s.mos!=null&&s.mos>0},
+
+  {id:"smart_money_exit", cat:"Ownership & sentiment", name:"Smart Money Exit",
+   formula:"Insider/promoter stake falling  AND  Revenue YoY < 0  AND  FCF YoY < 0",
+   meaning:"Insiders are reducing their stake at the same time the business itself is shrinking on both the top line and cash generation. Three negative signals reinforcing each other.",
+   read:"Insider selling alone isn't automatically bearish (could be diversification or estate planning) — but paired with genuinely weakening fundamentals, it removes the benefit of the doubt. Worth checking if the selling was open-market or a pledge/forced sale.",
+   test:s=>s.insiderTrend!=null&&s.insiderTrend<-1 && s.revG!=null&&s.revG<0 && s.fcfG!=null&&s.fcfG<0},
+
+  /* ---------------- MACRO CROSS ---------------- */
+  {id:"macro_tailwind_compounder", cat:"Macro cross", name:"Macro Tailwind Compounder",
+   formula:"ROE > 18%  AND  FCF growing  AND  sector macro read = tailwind",
+   meaning:"A genuinely good business that also happens to have the current rate/crude/currency environment working in its favor right now, not just its own fundamentals.",
+   read:"Two independent things are pointing the same way — but remember macro tailwinds can reverse faster than fundamentals do. Don't mistake a temporary cyclical assist for permanent quality; re-check this one if the macro backdrop shifts.",
+   test:(s,ctx)=>{ if(!ctx.macro) return false; const m=macroRead(s,ctx.macro); return s.roe!=null&&s.roe>18 && s.fcfG!=null&&s.fcfG>0 && m&&m.score>=1; }},
+
+  {id:"fighting_tide", cat:"Macro cross", name:"Fighting the Tide",
+   formula:"ROE > 18%  AND  FCF growing  AND  sector macro read = headwind",
+   meaning:"Strong underlying business, but currently working against an unfavorable rate/currency/commodity backdrop for its sector. Good company, bad timing.",
+   read:"These often become the Insider Conviction or Hidden Compounder setups a few quarters later, once the macro backdrop normalizes — worth watching rather than dismissing, but timing entry around the macro read matters here more than usual.",
+   test:(s,ctx)=>{ if(!ctx.macro) return false; const m=macroRead(s,ctx.macro); return s.roe!=null&&s.roe>18 && s.fcfG!=null&&s.fcfG>0 && m&&m.score<=-1; }},
+
+  /* ---------------- MOMENTUM & REVERSION ---------------- */
+  {id:"beaten_down", cat:"Momentum & reversion", name:"Beaten Down But Sound",
+   formula:"52wk range position < 25%  AND  Revenue YoY > 0  AND  FCF/NI ≥ 0.9",
+   meaning:"Trading near its 52-week low, yet revenue is still growing and cash conversion remains healthy. The price action and the fundamentals are telling different stories.",
+   read:"Worth investigating why the price fell — a sector-wide selloff dragging a sound company down with weaker peers is a very different situation from company-specific bad news that hasn't shown up in the numbers yet. Check the Sources panel for recent news before concluding it's an overreaction.",
+   test:s=>s.pricePos!=null&&s.pricePos<25 && s.revG!=null&&s.revG>0 && (s.fcfNi==null||s.fcfNi>=0.9)},
+
+  {id:"momentum_no_substance", cat:"Momentum & reversion", name:"Momentum Without Substance",
+   formula:"52wk range position > 85%  AND  Rev growth Δ < 0  AND  DCF gap < -15%",
+   meaning:"Trading near its 52-week high, growth is already decelerating, and the price sits well above estimated value. The stock's momentum has outrun its fundamentals.",
+   read:"Not a prediction of an imminent fall — momentum can persist longer than fundamentals justify. But the risk/reward here is skewed: you're paying a high price for a growth rate that's already slowing, with limited margin for disappointment.",
+   test:s=>s.pricePos!=null&&s.pricePos>85 && s.revDecel!=null&&s.revDecel<0 && s.mos!=null&&s.mos<-15},
+
+  {id:"turnaround", cat:"Momentum & reversion", name:"The Turnaround Candidate",
+   formula:"Quarterly revenue accelerating (QoQ > prior QoQ)  AND  DCF gap > 0",
+   meaning:"The most recent quarter shows sequential improvement versus the one before it, while the stock still trades below estimated intrinsic value — an early sign the business may be inflecting before the market has caught up.",
+   read:"One quarter of improvement is a data point, not a trend — check it holds for 2+ quarters before treating it as confirmed. If it does, this is often the earliest, cheapest point to notice a genuine turnaround.",
+   test:s=>{const q=s.quarterly?.revenue; if(!q||q.length<3) return false; const latest=yoy(q), prior=yoy(q.slice(1)); return latest!=null&&prior!=null&&latest>prior && s.mos!=null&&s.mos>0;}},
+];
+
+const PLAYBOOK_CATEGORIES = [...new Set(PLAYBOOK.map(p=>p.cat))];
+

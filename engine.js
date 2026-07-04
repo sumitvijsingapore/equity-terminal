@@ -573,3 +573,122 @@ function decisionSynthesis(s, P, L, macro){
 
   return {quality, price, quadrant, qColor, headline, guidance, confidence, confNote, reasoning, monitors:monitors.slice(0,3)};
 }
+
+/* ============================================================
+   VETERAN'S LENS — six assessments a 50-year investor uses that
+   standard screeners never show. Computed from data already loaded.
+   ============================================================ */
+function veteranMetrics(s){
+  const A=s.annual; const rev=A.revenue||[], fcf=A.fcf||[], ni=A.netIncome||[], ocf=A.ocf||[], ebitda=A.ebitda||[], capex=A.capex||[];
+  const M={};
+
+  // 1. STEADINESS — variability of growth + FCF positivity streak
+  {
+    const gs=[]; for(let i=0;i<rev.length-1;i++){ if(rev[i+1]) gs.push((rev[i]-rev[i+1])/Math.abs(rev[i+1])*100); }
+    let vol=null; if(gs.length>=2){ const m=gs.reduce((a,b)=>a+b,0)/gs.length; vol=Math.sqrt(gs.reduce((a,b)=>a+(b-m)**2,0)/gs.length); }
+    const posYears=fcf.filter(v=>v!=null&&v>0).length, totYears=fcf.filter(v=>v!=null).length;
+    let score=50; if(vol!=null){ if(vol<5)score+=25; else if(vol<10)score+=12; else if(vol>20)score-=20; else if(vol>12)score-=8; }
+    if(totYears>=3){ if(posYears===totYears)score+=15; else if(posYears<totYears/2)score-=20; }
+    M.steadiness={score:Math.max(0,Math.min(100,score)), vol, posYears, totYears,
+      verdict: score>=68?"Metronome":score>=48?"Workable":"Erratic",
+      read: vol==null?"Not enough history to judge.":`Revenue growth volatility of ±${vol.toFixed(1)}pts across the window; FCF positive in ${posYears}/${totYears} years. ${vol<8?"This business would not embarrass you in a bad year — the pattern is the asset.":vol>15?"Results swing widely — whatever the average says, you cannot count on any single year.":"Moderate variability — readable, but verify the drivers of the swings."}`};
+  }
+
+  // 2. INCREMENTAL ECONOMICS — margin on the marginal dollar
+  {
+    let inc=null, avg=null;
+    if(rev.length>=4&&ebitda.length>=4&&rev[0]!=null&&rev[3]!=null&&(rev[0]-rev[3])>0){
+      inc=(ebitda[0]-ebitda[3])/(rev[0]-rev[3])*100;
+      avg=ebitda[0]/rev[0]*100;
+    }
+    let score=50, read="Insufficient data (needs 4 years and growing revenue).";
+    if(inc!=null){
+      const gap=inc-avg;
+      if(gap>8){score=80; read=`Each new dollar of revenue came in at ${inc.toFixed(0)}% EBITDA margin vs ${avg.toFixed(0)}% average — the marginal dollar is far more profitable than the historical one. Reported margins will keep rising mechanically. This is the future arriving early.`;}
+      else if(gap>2){score=65; read=`Incremental margin ${inc.toFixed(0)}% vs ${avg.toFixed(0)}% average — new business is modestly more profitable. Gentle structural improvement underway.`;}
+      else if(gap>-5){score=50; read=`Incremental margin ${inc.toFixed(0)}% ≈ average ${avg.toFixed(0)}% — growing at constant economics. Fine, but no hidden margin story.`;}
+      else {score=30; read=`Incremental margin ${inc.toFixed(0)}% is BELOW the ${avg.toFixed(0)}% average — each new dollar of revenue is less profitable than the old ones. Reported margins will erode as this mix compounds, even if headline growth looks fine.`;}
+    }
+    M.incremental={score, inc, avg, verdict: score>=68?"Improving engine":score>=45?"Constant economics":"Deteriorating mix", read};
+  }
+
+  // 3. REVERSE DCF — the growth rate the price already assumes
+  {
+    let implied=null;
+    const base=fcf[0];
+    if(base!=null&&base>0&&s.shares&&s.price){
+      // binary search initial growth g0 (fading to 3% terminal over 10y, 10% discount) matching price
+      const target=s.price;
+      let lo=-0.10, hi=0.45;
+      for(let iter=0;iter<40;iter++){
+        const g0=(lo+hi)/2; let pv=0,f=base; const r=0.10,tg=0.03,yrs=10;
+        for(let y=1;y<=yrs;y++){ const gr=g0*(1-(y-1)/yrs)+tg*((y-1)/yrs); f*=(1+gr); pv+=f/Math.pow(1+r,y); }
+        pv+=(f*(1+tg))/(r-tg)/Math.pow(1+r,yrs);
+        const perShare=(pv-s.debt)/s.shares;
+        if(perShare<target) lo=g0; else hi=g0;
+      }
+      implied=((lo+hi)/2)*100;
+    }
+    const hist=s.fcfCagr;
+    let score=50, read="Cannot compute (needs positive FCF).";
+    if(implied!=null){
+      const gapTxt = hist!=null?` Historically it has delivered ${hist.toFixed(0)}% FCF CAGR.`:"";
+      if(hist!=null){
+        const gap=implied-hist;
+        if(gap<-8){score=80; read=`The price implies only ~${implied.toFixed(0)}% starting FCF growth (10% discount, fading to 3%).${gapTxt} The market is asking for LESS than the company has proven — expectations are beatable. This gap is where returns come from.`;}
+        else if(gap<3){score=60; read=`Price implies ~${implied.toFixed(0)}% FCF growth.${gapTxt} Expectations roughly match the track record — fairly priced against its own history.`;}
+        else if(gap<12){score=38; read=`Price implies ~${implied.toFixed(0)}% growth.${gapTxt} The market demands more than the company has ever delivered — you're underwriting an acceleration that hasn't happened yet.`;}
+        else {score=20; read=`Price implies ~${implied.toFixed(0)}% sustained growth.${gapTxt} That's far beyond the demonstrated record — the price is a bet on transformation, not continuation. Ask precisely what changed.`;}
+      } else { read=`Price implies ~${implied.toFixed(0)}% starting FCF growth, fading to 3% terminal. Judge that against what you believe this business can do.`; }
+    }
+    M.impliedGrowth={score, implied, hist, verdict: score>=68?"Beatable expectations":score>=45?"Fairly demanded":"Heroic assumptions", read};
+  }
+
+  // 4. ACCRUALS SMELL TEST — profit vs cash gap (Sloan anomaly)
+  {
+    const pairs=[]; for(let i=0;i<Math.min(ni.length,ocf.length,rev.length);i++){ if(ni[i]!=null&&ocf[i]!=null&&rev[i]) pairs.push((ni[i]-ocf[i])/rev[i]*100); }
+    const acc=pairs.length?pairs.reduce((a,b)=>a+b,0)/pairs.length:null;
+    let score=50, read="Insufficient data.";
+    if(acc!=null){
+      if(acc<-3){score=78; read=`Operating cash exceeds reported profit by ${Math.abs(acc).toFixed(1)}% of revenue on average — earnings are conservative, cash arrives before the accounting admits it. The cleanest smell there is.`;}
+      else if(acc<3){score=60; read=`Accruals near zero (${acc.toFixed(1)}% of revenue) — profit and cash tell the same story. Nothing to distrust here.`;}
+      else if(acc<8){score=38; read=`Reported profit runs ${acc.toFixed(1)}% of revenue ahead of operating cash — a persistent accrual wedge. Decades of research (the Sloan anomaly) show these companies systematically disappoint later. Not proof of trouble, but the burden of proof shifts to the company.`;}
+      else {score=18; read=`Accruals of ${acc.toFixed(1)}% of revenue — profit is far ahead of the cash arriving. This is the forensic accountant's first stop. Something in receivables, inventory, or recognition policy deserves a hard look before believing the earnings.`;}
+    }
+    M.accruals={score, acc, verdict: score>=68?"Smells like cash":score>=45?"Clean":"Profit ahead of cash", read};
+  }
+
+  // 5. REINVESTMENT EFFECTIVENESS — revenue bought per capex dollar
+  {
+    let eff=null;
+    const capSum=capex.filter(v=>v!=null).reduce((a,b)=>a+Math.abs(b),0);
+    if(rev.length>=4&&rev[0]!=null&&rev[3]!=null&&capSum>0) eff=(rev[0]-rev[3])/capSum;
+    let score=50, read="Insufficient data.";
+    if(eff!=null){
+      if(eff>1.5){score=78; read=`Every dollar of capex over the window bought $${eff.toFixed(2)} of new annual revenue — reinvestment is genuinely compounding. Management's spending earns its keep.`;}
+      else if(eff>0.5){score=58; read=`$${eff.toFixed(2)} of new revenue per capex dollar — respectable reinvestment economics, in line with a healthy capital-using business.`;}
+      else if(eff>0){score=38; read=`Only $${eff.toFixed(2)} of new revenue per capex dollar — heavy spending, little growth to show. Much of this capex is treadmill maintenance dressed as investment, or the returns haven't arrived yet. Ask which.`;}
+      else {score=22; read=`Revenue SHRANK despite ${(capSum).toFixed(0)} of cumulative capex — capital is being consumed defending a declining position. The worst use of shareholder money.`;}
+    }
+    M.reinvest={score, eff, verdict: score>=68?"Compounding capex":score>=45?"Earning its keep":"Treadmill spending", read};
+  }
+
+  // 6. WORST-YEAR RESILIENCE — the floor, not the average
+  {
+    let worstRev=null, worstFcf=null;
+    for(let i=0;i<rev.length-1;i++){ if(rev[i+1]){ const g=(rev[i]-rev[i+1])/Math.abs(rev[i+1])*100; if(worstRev==null||g<worstRev)worstRev=g; } }
+    for(let i=0;i<fcf.length-1;i++){ if(fcf[i+1]&&fcf[i+1]!==0){ const g=(fcf[i]-fcf[i+1])/Math.abs(fcf[i+1])*100; if(worstFcf==null||g<worstFcf)worstFcf=g; } }
+    let score=50, read="Insufficient history.";
+    if(worstRev!=null){
+      if(worstRev>0&&(worstFcf==null||worstFcf>-15)){score=80; read=`Even the WORST year in the window grew revenue (${worstRev.toFixed(1)}%)${worstFcf!=null?` with FCF never falling more than ${Math.abs(Math.min(worstFcf,0)).toFixed(0)}%`:""}. The floor is high — this is what lets you size a position with confidence and sleep.`;}
+      else if(worstRev>-5){score=60; read=`Worst year: revenue ${worstRev.toFixed(1)}%${worstFcf!=null?`, FCF ${worstFcf.toFixed(0)}%`:""}. Shallow drawdowns — the business bends without breaking.`;}
+      else if(worstRev>-15){score=40; read=`Worst year saw revenue fall ${Math.abs(worstRev).toFixed(0)}%${worstFcf!=null?` and FCF move ${worstFcf.toFixed(0)}%`:""}. Meaningful cyclicality — size the position by this year, not the average one.`;}
+      else {score=22; read=`Worst year: revenue ${worstRev.toFixed(0)}%${worstFcf!=null?`, FCF ${worstFcf.toFixed(0)}%`:""}. Deep drawdowns are part of this business's character. Whatever the averages say, THIS is what you must be able to hold through.`;}
+    }
+    M.resilience={score, worstRev, worstFcf, verdict: score>=68?"High floor":score>=45?"Bends, doesn't break":"Deep drawdowns", read};
+  }
+
+  const parts=[M.steadiness,M.incremental,M.impliedGrowth,M.accruals,M.reinvest,M.resilience];
+  M.composite=Math.round(parts.reduce((a,p)=>a+p.score,0)/parts.length);
+  return M;
+}
