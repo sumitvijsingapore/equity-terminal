@@ -81,6 +81,12 @@ fetch("verify_in.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
   if(Array.isArray(d)){ VERIFY_IN={}; d.forEach(rec=>{ if(rec.ticker) VERIFY_IN[rec.ticker]=rec; }); render(); }
 }).catch(()=>{ /* fine — data integrity panel just skips the NSE cross-check */ });
 
+let PRICE_HISTORY = {};
+fetch("price_history.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
+  if(Array.isArray(d)) d.forEach(rec=>{ if(rec.ticker) PRICE_HISTORY[rec.ticker]=rec; });
+  render();
+}).catch(()=>{ /* fine — price chart panel shows a setup message instead */ });
+
 function computeRows(){
   return State.data.map(s=>{
     const intrinsic = dcf(normalize(s), {discount:State.discount, termGrowth:State.termGrowth, years:10});
@@ -349,6 +355,7 @@ function renderTearsheet(t){
     <button class="watchbtn" data-cmp="${s.t}" style="align-self:center">${State.compare.includes(s.t)?'✓ In compare':'+ Add to compare'}</button>
   </div>
 
+  ${renderPriceChart(s)}
   <div class="takeaway">${takeaway(s)}</div>
   ${renderDataIntegrity(s)}
   ${renderDecisionEngine(s)}
@@ -669,6 +676,32 @@ function renderIntegratedVerdict(s, allRows){
 
 /* ---------- macro context panel ---------- */
 /* ---------- data integrity panel ---------- */
+/* ---------- price chart: price + DCF line + earnings markers ---------- */
+function renderPriceChart(s){
+  const ph = PRICE_HISTORY[s.t];
+  if(!ph || !ph.dates || ph.dates.length<2){
+    return `<div class="panel" style="margin:14px 0">
+      <div class="panelhead"><span class="panelt">Price history</span></div>
+      <p style="font-size:12.5px;color:var(--dim);line-height:1.6">Not loaded yet. Run <code>python fetch_price_history.py</code> locally (free, no API key) to activate the price chart with DCF overlay and earnings markers for ${s.t}.</p>
+    </div>`;
+  }
+  const edgarRec = EDGAR_DATA[s.t];
+  const earningsDates = (edgarRec?.quarters||[]).map(q=>({date:q.date}));
+  const chart = svgPriceChart(ph.dates, ph.closes, {
+    height:220, intrinsic:s.intrinsic, low52:s.low52, high52:s.high52, earningsDates
+  });
+  if(!chart) return "";
+  return `
+  <div class="panel wide" style="margin:14px 0">
+    <div class="panelhead">
+      <span class="panelt">Price history (2yr, weekly)</span>
+      <span class="panels">green = price · purple dashed = DCF intrinsic value · amber dots = earnings dates</span>
+    </div>
+    ${chart}
+    <p style="font-size:10.5px;color:var(--dim);margin-top:8px;line-height:1.5">Shaded band marks the current 52-week range. Click an amber dot to jump to that quarter in the Earnings Track Record panel below. Weekly closes, free via Yahoo Finance — run <code>fetch_price_history.py</code> to keep this current.</p>
+  </div>`;
+}
+
 function renderDataIntegrity(s){
   const D = dataIntegrityChecks(s, VERIFY_US, VERIFY_IN);
   if(D.checks.length===0) return "";  // nothing to say, don't clutter the page
@@ -815,7 +848,7 @@ function renderTrackRecord(s){
       </tr></thead>
       <tbody>
         ${withExcess.map(r=>`
-          <tr>
+          <tr id="earnrow-${r.date}">
             <td class="left">${r.date}</td>
             <td>${r.priceAtFiling==null?"—":fmtP(r.priceAtFiling,s.mkt)}</td>
             <td style="color:${clr(r.reaction1d)}">${sign(r.reaction1d)}</td>
@@ -1766,6 +1799,16 @@ function wireEvents(){
   }
   root.querySelectorAll("[data-jumpto]").forEach(el=>el.onclick=()=>{
     State.sel=el.dataset.jumpto; State.tab="stocks"; State.q=""; State.kpiExpanded=false; render();
+  });
+
+  root.querySelectorAll("[data-earningmarker]").forEach(el=>el.onclick=(e)=>{
+    e.stopPropagation();
+    const row = document.getElementById(`earnrow-${el.dataset.earningmarker}`);
+    if(row){
+      row.scrollIntoView({behavior:"smooth", block:"center"});
+      row.style.transition="background .3s"; row.style.background="var(--accent-soft)";
+      setTimeout(()=>{ row.style.background=""; }, 1600);
+    }
   });
 
   root.querySelectorAll("[data-open]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-star]')||e.target.closest('[data-cmp]'))return; State.sel=el.dataset.open;State.tab="stocks";State.kpiExpanded=false;render();});

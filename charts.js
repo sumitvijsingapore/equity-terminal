@@ -62,6 +62,69 @@ function svgSpark(data, w, h){
 }
 
 /* ============================================================
+   PRICE CHART — price history with DCF intrinsic value overlay
+   and clickable earnings-date markers. The connective chart that
+   ties price, valuation, and earnings reactions together instead
+   of leaving them as three separate panels with no visual link.
+   ============================================================ */
+function svgPriceChart(dates, closes, opts){
+  opts = opts || {};
+  const height = opts.height || 220;
+  const intrinsic = opts.intrinsic, low52 = opts.low52, high52 = opts.high52;
+  const earningsDates = opts.earningsDates || []; // [{date:"YYYY-MM-DD"}]
+
+  const n = closes.length;
+  if(n < 2) return null;
+
+  const allVals = closes.filter(v=>v!=null).slice();
+  if(intrinsic!=null) allVals.push(intrinsic);
+  if(low52!=null) allVals.push(low52);
+  if(high52!=null) allVals.push(high52);
+  if(!allVals.length) return null;
+  const max = Math.max(...allVals), min = Math.min(...allVals);
+  const pad = (max-min)*0.08 || max*0.05 || 1;
+  const vmax = max+pad, vmin = Math.max(0, min-pad);
+  const span = (vmax-vmin) || 1;
+
+  const xpos = i => n>1 ? i/(n-1)*100 : 50;
+  const ypos = v => 100 - ((v-vmin)/span*90 + 5);
+
+  const bandHtml = (low52!=null && high52!=null) ?
+    `<rect x="0" y="${ypos(high52).toFixed(2)}" width="100" height="${(ypos(low52)-ypos(high52)).toFixed(2)}" fill="#0e6e5c" opacity="0.06"/>` : "";
+
+  const pricePts = closes.map((v,i)=>v==null?null:`${xpos(i).toFixed(2)},${ypos(v).toFixed(2)}`).filter(Boolean).join(" ");
+  const priceLine = `<polyline points="${pricePts}" fill="none" stroke="#0e6e5c" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+
+  const intrinsicLine = intrinsic!=null ?
+    `<line x1="0" y1="${ypos(intrinsic).toFixed(2)}" x2="100" y2="${ypos(intrinsic).toFixed(2)}" stroke="#6d5dd3" stroke-width="1" stroke-dasharray="2,1.5" vector-effect="non-scaling-stroke"/>` : "";
+
+  const closestIdx = targetDate => {
+    let best=0, bestDiff=Infinity;
+    const t = new Date(targetDate).getTime();
+    dates.forEach((dt,i)=>{ const diff=Math.abs(new Date(dt).getTime()-t); if(diff<bestDiff){bestDiff=diff;best=i;} });
+    return best;
+  };
+  const markers = earningsDates.map(ed=>{
+    const idx = closestIdx(ed.date);
+    if(closes[idx]==null) return "";
+    return `<circle cx="${xpos(idx).toFixed(2)}" cy="${ypos(closes[idx]).toFixed(2)}" r="1.9" fill="#b8860b" stroke="#fff" stroke-width="0.6" data-earningmarker="${ed.date}" style="cursor:pointer"><title>Earnings: ${ed.date}</title></circle>`;
+  }).join("");
+
+  const gridlines=[0.25,0.5,0.75].map(g=>`<line x1="0" y1="${g*100}" x2="100" y2="${g*100}" stroke="#eeece6" stroke-width="0.3"/>`).join("");
+  const labelDates = n>=3 ? [dates[0], dates[Math.floor(n/2)], dates[n-1]] : [dates[0], dates[n-1]];
+
+  return `<div style="width:100%">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="width:100%;height:${height}px;display:block">
+      ${bandHtml}${gridlines}${intrinsicLine}${priceLine}${markers}
+    </svg>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      ${labelDates.map(d=>`<span style="font-size:10px;color:#8a8a86;font-family:var(--mono)">${d}</span>`).join("")}
+    </div>
+  </div>`;
+}
+
+
+/* ============================================================
    SECTOR CYCLE INTELLIGENCE — same knowledge base as before.
    ============================================================ */
 const MACRO_DRIVERS=[
