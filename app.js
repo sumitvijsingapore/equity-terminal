@@ -22,11 +22,8 @@ const State = {
   learnMode: true,
   showWatchlist: false,
   watchlist: JSON.parse(localStorage.getItem("terminal_watchlist")||"[]"),
+  customStocks: JSON.parse(localStorage.getItem("terminal_custom_stocks")||"[]"),
   compare: [],
-  filters: { sectors: [], revG:{min:null,max:null}, fcfG:{min:null,max:null}, pe:{min:null,max:null},
-             mos:{min:null,max:null}, health:{min:null,max:null}, mcap:{min:null,max:null} },
-  filterLogic: "AND",
-  filtersOpen: true,
   playbookCat: "all",
   playbookMkt: "ALL",
   playbookOpen: null,
@@ -39,6 +36,28 @@ const State = {
 };
 
 function saveWatchlist(){ localStorage.setItem("terminal_watchlist", JSON.stringify(State.watchlist)); }
+function saveCustomStocks(){ localStorage.setItem("terminal_custom_stocks", JSON.stringify(State.customStocks)); }
+function esc(v){ return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function addMissingStock(form){
+  const fd=new FormData(form);
+  const t=String(fd.get("ticker")||"").trim().toUpperCase().replace(/[^A-Z0-9.\-&]/g,"");
+  if(!t){ alert("Enter a ticker symbol."); return; }
+  const listed=State.data.find(s=>s.t.toUpperCase()===t);
+  if(listed){
+    if(!State.watchlist.includes(listed.t)) State.watchlist.push(listed.t);
+    saveWatchlist(); render(); return;
+  }
+  const stock={t,n:String(fd.get("name")||t).trim()||t,mkt:fd.get("market")==="IN"?"IN":"US",price:Number(fd.get("price"))||null};
+  const i=State.customStocks.findIndex(s=>s.t===t);
+  if(i>=0) State.customStocks[i]=stock; else State.customStocks.push(stock);
+  if(!State.watchlist.includes(t)) State.watchlist.push(t);
+  saveCustomStocks(); saveWatchlist(); render();
+}
+function removeCustomStock(t){
+  State.customStocks=State.customStocks.filter(s=>s.t!==t);
+  State.watchlist=State.watchlist.filter(x=>x!==t);
+  saveCustomStocks(); saveWatchlist(); render();
+}
 function toggleWatch(t){
   const i=State.watchlist.indexOf(t);
   if(i>=0) State.watchlist.splice(i,1); else State.watchlist.push(t);
@@ -81,12 +100,6 @@ fetch("verify_in.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
   if(Array.isArray(d)){ VERIFY_IN={}; d.forEach(rec=>{ if(rec.ticker) VERIFY_IN[rec.ticker]=rec; }); render(); }
 }).catch(()=>{ /* fine — data integrity panel just skips the NSE cross-check */ });
 
-let PRICE_HISTORY = {};
-fetch("price_history.json").then(r=>r.ok?r.json():Promise.reject()).then(d=>{
-  if(Array.isArray(d)) d.forEach(rec=>{ if(rec.ticker) PRICE_HISTORY[rec.ticker]=rec; });
-  render();
-}).catch(()=>{ /* fine — price chart panel shows a setup message instead */ });
-
 function computeRows(){
   return State.data.map(s=>{
     const intrinsic = dcf(normalize(s), {discount:State.discount, termGrowth:State.termGrowth, years:10});
@@ -117,33 +130,6 @@ const PRESETS=[
    test:s=>State.watchlist.includes(s.t)},
 ];
 
-function distinctSectors(){
-  return [...new Set(State.data.map(s=>s.sec).filter(Boolean))].sort();
-}
-
-function advancedFilterActive(){
-  const F = State.filters;
-  return F.sectors.length>0 || ["revG","fcfG","pe","mos","health","mcap"].some(k=>F[k].min!=null||F[k].max!=null);
-}
-
-function passesRange(val, range){
-  if(range.min==null && range.max==null) return null; // inactive
-  if(val==null) return false;
-  if(range.min!=null && val<range.min) return false;
-  if(range.max!=null && val>range.max) return false;
-  return true;
-}
-
-function passesAdvancedFilters(s){
-  const F = State.filters;
-  const preds = [];
-  if(F.sectors.length>0) preds.push(F.sectors.includes(s.sec));
-  const fields = [["revG","revG"],["fcfG","fcfG"],["pe","pe"],["mos","mos"],["health","healthScore"],["mcap","mcap"]];
-  fields.forEach(([fk,sk])=>{ const r=passesRange(s[sk], F[fk]); if(r!==null) preds.push(r); });
-  if(preds.length===0) return true;
-  return State.filterLogic==="AND" ? preds.every(Boolean) : preds.some(Boolean);
-}
-
 function filteredRows(){
   let rows = computeRows();
   const preset = PRESETS.find(p=>p.id===State.preset) || PRESETS[0];
@@ -151,7 +137,7 @@ function filteredRows(){
     (State.mkt==="ALL"||s.mkt===State.mkt) &&
     (State.capTier==="ALL"||capTierOf(s)===State.capTier) &&
     (State.q===""||s.t.toLowerCase().includes(State.q.toLowerCase())||s.n.toLowerCase().includes(State.q.toLowerCase())) &&
-    preset.test(s) && passesAdvancedFilters(s)
+    preset.test(s)
   );
   const dir = {health:-1,mcap:-1,revG:-1,fcfG:-1,mos:-1,roe:-1,pe:1}[State.sort] || -1;
   rows.sort((a,b)=>{
@@ -164,20 +150,7 @@ function filteredRows(){
 
 function clr(v){ return v==null?"#6b6b68":v>0?"var(--good)":"var(--warn)"; }
 
-function globalSearchMatches(query, limit=7){
-  const q = query.trim().toLowerCase();
-  if(!q) return [];
-  const starts = [], contains = [];
-  State.data.forEach(s=>{
-    const t = s.t.toLowerCase(), n = (s.n||"").toLowerCase();
-    if(t.startsWith(q)) starts.push(s);
-    else if(t.includes(q) || n.includes(q)) contains.push(s);
-  });
-  return [...starts, ...contains].slice(0, limit);
-}
-
 function renderHeader(){
-  const matches = globalSearchMatches(State.q);
   return `
   <header class="app">
     <div class="headrow">
@@ -190,18 +163,6 @@ function renderHeader(){
         <button data-tab="learn" class="${State.tab==='learn'?'on':''}">Learn</button>
         <button data-tab="veteran" class="${State.tab==='veteran'?'on':''}">Veteran's Lens</button>
       </div>
-      <div style="position:relative;flex:1;min-width:160px;max-width:260px">
-        <input class="search" id="globalSearchBox" placeholder="Jump to any stock…" value="${State.q}" style="width:100%"/>
-        ${matches.length?`
-        <div style="position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--panel);border:1px solid var(--line);
-          border-radius:8px;box-shadow:0 8px 24px rgba(20,20,18,.12);z-index:50;overflow:hidden;max-height:320px;overflow-y:auto">
-          ${matches.map(s=>`
-            <div data-jumpto="${s.t}" style="padding:9px 12px;cursor:pointer;display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)">
-              <span><b style="font-size:13px">${s.t}</b> <span style="font-size:12px;color:var(--dim)">${s.n}</span></span>
-              <span style="font-size:11px;color:var(--dim);flex-shrink:0">${s.mkt==="US"?"S&P":"Nifty"}</span>
-            </div>`).join("")}
-        </div>`:""}
-      </div>
       <button class="watchbtn" id="watchToggle">★ Watchlist (${State.watchlist.length})</button>
       <span class="livebadge ${State.live?'live':'sample'}">${State.live?'● LIVE · YAHOO':'● SAMPLE DATA'} · ${State.data.length} names</span>
     </div>
@@ -213,54 +174,6 @@ function renderPresets(){
     <button class="preset ${State.preset===p.id?'on':''}" data-preset="${p.id}">
       ${p.label}${p.n?`<span class="n">${p.n}</span>`:''}
     </button>`).join("")}</div>`;
-}
-
-function renderFilterRow(){
-  const sectors = distinctSectors();
-  const F = State.filters;
-  const activeCount = (F.sectors.length>0?1:0) +
-    ["revG","fcfG","pe","mos","health","mcap"].filter(k=>F[k].min!=null||F[k].max!=null).length;
-  const numFilters = [
-    ["revG","Rev YoY %","-50","200"],["fcfG","FCF YoY %","-50","200"],
-    ["pe","P/E","0","100"],["mos","DCF gap %","-100","100"],
-    ["health","Score","0","100"],["mcap","Mkt cap","0",""],
-  ];
-  return `
-  <div class="panel" style="margin-bottom:16px;padding:0">
-    <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" data-filterstoggle>
-      <span style="font-weight:700;font-size:13.5px">${State.filtersOpen?"▾":"▸"} Filters${activeCount>0?` <span class="pill good" style="margin-left:6px">${activeCount} active</span>`:""}</span>
-      ${activeCount>0?`<button class="preset" data-clearfilters style="padding:4px 10px;font-size:12px">Clear all</button>`:""}
-    </div>
-    ${State.filtersOpen?`
-    <div style="padding:0 16px 16px;border-top:1px solid var(--line)">
-      <div style="margin-top:14px;margin-bottom:6px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Sector (select any)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">
-        ${sectors.map(sec=>`<button class="preset ${F.sectors.includes(sec)?'on':''}" data-sectorchip="${sec}" style="padding:5px 11px;font-size:12.5px">${sec}</button>`).join("")}
-      </div>
-      <div style="margin-bottom:6px;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Numeric ranges (leave blank = no limit)</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px">
-        ${numFilters.map(([k,label,phMin,phMax])=>`
-          <div>
-            <div style="font-size:12px;color:#444;margin-bottom:4px">${label}</div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <input type="number" data-numfilter="${k}" data-bound="min" placeholder="${phMin}" value="${F[k].min??''}"
-                style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px"/>
-              <span style="color:var(--dim);font-size:11px">to</span>
-              <input type="number" data-numfilter="${k}" data-bound="max" placeholder="${phMax}" value="${F[k].max??''}"
-                style="width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px"/>
-            </div>
-          </div>`).join("")}
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:12px;color:#444">Combine filters with:</span>
-        <div class="seg">
-          <button data-filterlogic="AND" class="${State.filterLogic==='AND'?'on':''}">Match ALL (AND)</button>
-          <button data-filterlogic="OR" class="${State.filterLogic==='OR'?'on':''}">Match ANY (OR)</button>
-        </div>
-      </div>
-      <p style="font-size:11px;color:var(--dim);margin:10px 0 0;line-height:1.5">Sector selections always combine with each other as OR (pick any of several sectors). The AND/OR toggle governs how sector + numeric-range filters combine with one another. Market, cap-size, search, and preset filters above always apply as AND regardless of this setting.</p>
-    </div>`:""}
-  </div>`;
 }
 
 function renderScreener(){
@@ -276,8 +189,8 @@ function renderScreener(){
     <div class="seg">
       ${[["ALL","All sizes"],["mega","Mega cap"],["large","Large cap"],["mid","Mid cap"]].map(([k,l])=>`<button data-cap="${k}" class="${State.capTier===k?'on':''}">${l}</button>`).join("")}
     </div>
-    </div>
-  ${renderFilterRow()}
+    <input class="search" id="searchBox" placeholder="Search ticker or name…" value="${State.q}"/>
+  </div>
   <div style="overflow-x:auto">
   <table class="grid">
     <thead><tr>
@@ -355,7 +268,6 @@ function renderTearsheet(t){
     <button class="watchbtn" data-cmp="${s.t}" style="align-self:center">${State.compare.includes(s.t)?'✓ In compare':'+ Add to compare'}</button>
   </div>
 
-  ${renderPriceChart(s)}
   <div class="takeaway">${takeaway(s)}</div>
   ${renderDataIntegrity(s)}
   ${renderDecisionEngine(s)}
@@ -676,32 +588,6 @@ function renderIntegratedVerdict(s, allRows){
 
 /* ---------- macro context panel ---------- */
 /* ---------- data integrity panel ---------- */
-/* ---------- price chart: price + DCF line + earnings markers ---------- */
-function renderPriceChart(s){
-  const ph = PRICE_HISTORY[s.t];
-  if(!ph || !ph.dates || ph.dates.length<2){
-    return `<div class="panel" style="margin:14px 0">
-      <div class="panelhead"><span class="panelt">Price history</span></div>
-      <p style="font-size:12.5px;color:var(--dim);line-height:1.6">Not loaded yet. Run <code>python fetch_price_history.py</code> locally (free, no API key) to activate the price chart with DCF overlay and earnings markers for ${s.t}.</p>
-    </div>`;
-  }
-  const edgarRec = EDGAR_DATA[s.t];
-  const earningsDates = (edgarRec?.quarters||[]).map(q=>({date:q.date}));
-  const chart = svgPriceChart(ph.dates, ph.closes, {
-    height:220, intrinsic:s.intrinsic, low52:s.low52, high52:s.high52, earningsDates
-  });
-  if(!chart) return "";
-  return `
-  <div class="panel wide" style="margin:14px 0">
-    <div class="panelhead">
-      <span class="panelt">Price history (2yr, weekly)</span>
-      <span class="panels">green = price · purple dashed = DCF intrinsic value · amber dots = earnings dates</span>
-    </div>
-    ${chart}
-    <p style="font-size:10.5px;color:var(--dim);margin-top:8px;line-height:1.5">Shaded band marks the current 52-week range. Click an amber dot to jump to that quarter in the Earnings Track Record panel below. Weekly closes, free via Yahoo Finance — run <code>fetch_price_history.py</code> to keep this current.</p>
-  </div>`;
-}
-
 function renderDataIntegrity(s){
   const D = dataIntegrityChecks(s, VERIFY_US, VERIFY_IN);
   if(D.checks.length===0) return "";  // nothing to say, don't clutter the page
@@ -848,7 +734,7 @@ function renderTrackRecord(s){
       </tr></thead>
       <tbody>
         ${withExcess.map(r=>`
-          <tr id="earnrow-${r.date}">
+          <tr>
             <td class="left">${r.date}</td>
             <td>${r.priceAtFiling==null?"—":fmtP(r.priceAtFiling,s.mkt)}</td>
             <td style="color:${clr(r.reaction1d)}">${sign(r.reaction1d)}</td>
@@ -1503,11 +1389,24 @@ function renderLearn(){
 function renderWatchDrawer(){
   if(!State.showWatchlist) return "";
   const rows = computeRows().filter(s=>State.watchlist.includes(s.t));
+  const custom = State.customStocks.filter(s=>State.watchlist.includes(s.t));
   return `
   <div class="watchlist show">
     <div style="font-weight:700;margin-bottom:10px">★ Your watchlist</div>
-    ${rows.length===0?`<div class="watchempty">No stocks pinned yet — click the star on any row or tearsheet to add one.</div>`:
+    ${rows.length===0&&custom.length===0?`<div class="watchempty">No stocks pinned yet — click a star or add a missing ticker below.</div>`:
     rows.map(s=>`<div class="watchrow"><span data-open="${s.t}" style="cursor:pointer;font-weight:600">${s.t} <span style="color:var(--dim);font-weight:400">${s.n}</span></span><span style="color:${clr(s.mos)}">${sign(s.mos)} vs DCF</span></div>`).join("")}
+    ${custom.map(s=>`<div class="watchrow"><span><b>${esc(s.t)}</b> <span style="color:var(--dim)">${esc(s.n)}</span> <span class="customtag">CUSTOM</span></span><span>${s.price?`${s.mkt==="IN"?"₹":"$"}${s.price.toLocaleString()}`:"Price not set"}<button type="button" class="customremove" data-custom-remove="${esc(s.t)}" aria-label="Remove ${esc(s.t)}">×</button></span></div>`).join("")}
+    <details class="addmissing">
+      <summary>+ Add missing stock</summary>
+      <form id="missingStockForm" class="missingform">
+        <input name="ticker" placeholder="Ticker (required)" maxlength="20" required />
+        <input name="name" placeholder="Company name" maxlength="80" />
+        <select name="market"><option value="US">US / S&amp;P</option><option value="IN">India / NSE</option></select>
+        <input name="price" type="number" min="0" step="0.01" placeholder="Current price (optional)" />
+        <button type="submit" class="preset on">Add to my list</button>
+      </form>
+      <p class="customnote">Existing tickers are pinned normally. Missing tickers are saved in this browser and marked Custom until the main dataset includes them.</p>
+    </details>
   </div>`;
 }
 
@@ -1758,58 +1657,16 @@ function wireEvents(){
   if(homeLink) homeLink.onclick=()=>{State.tab="stocks";State.sel=null;State.preset="all";State.mkt="ALL";State.capTier="ALL";State.q="";render();window.scrollTo(0,0);};
   const watchToggle=document.getElementById("watchToggle");
   if(watchToggle) watchToggle.onclick=()=>{State.showWatchlist=!State.showWatchlist;render();};
+  const missingStockForm=document.getElementById("missingStockForm");
+  if(missingStockForm) missingStockForm.onsubmit=e=>{e.preventDefault();addMissingStock(missingStockForm);};
+  root.querySelectorAll("[data-custom-remove]").forEach(el=>el.onclick=()=>removeCustomStock(el.dataset.customRemove));
 
   root.querySelectorAll("[data-preset]").forEach(el=>el.onclick=()=>{State.preset=el.dataset.preset;render();});
   root.querySelectorAll("[data-mkt]").forEach(el=>el.onclick=()=>{State.mkt=el.dataset.mkt;render();});
   root.querySelectorAll("[data-cap]").forEach(el=>el.onclick=()=>{State.capTier=el.dataset.cap;render();});
-
-  const filtersToggle = root.querySelector("[data-filterstoggle]");
-  if(filtersToggle) filtersToggle.onclick=(e)=>{ if(e.target.closest('[data-clearfilters]'))return; State.filtersOpen=!State.filtersOpen;render();};
-  const clearFiltersBtn = root.querySelector("[data-clearfilters]");
-  if(clearFiltersBtn) clearFiltersBtn.onclick=(e)=>{ e.stopPropagation();
-    State.filters = { sectors:[], revG:{min:null,max:null}, fcfG:{min:null,max:null}, pe:{min:null,max:null},
-      mos:{min:null,max:null}, health:{min:null,max:null}, mcap:{min:null,max:null} };
-    render(); };
-  root.querySelectorAll("[data-sectorchip]").forEach(el=>el.onclick=()=>{
-    const sec = el.dataset.sectorchip;
-    const i = State.filters.sectors.indexOf(sec);
-    if(i>=0) State.filters.sectors.splice(i,1); else State.filters.sectors.push(sec);
-    render();
-  });
-  root.querySelectorAll("[data-numfilter]").forEach(el=>{
-    el.onchange=(e)=>{
-      const k=el.dataset.numfilter, bound=el.dataset.bound;
-      const v = e.target.value.trim()==="" ? null : parseFloat(e.target.value);
-      State.filters[k][bound] = (v!=null && isNaN(v)) ? null : v;
-      render();
-    };
-  });
-  root.querySelectorAll("[data-filterlogic]").forEach(el=>el.onclick=()=>{State.filterLogic=el.dataset.filterlogic;render();});
   root.querySelectorAll("[data-sort]").forEach(el=>el.onclick=()=>{State.sort=el.dataset.sort;render();});
-  const globalSearchBox=document.getElementById("globalSearchBox");
-  if(globalSearchBox){
-    globalSearchBox.oninput=e=>{State.q=e.target.value;render();};
-    globalSearchBox.onkeydown=e=>{
-      if(e.key==="Enter"){
-        const matches=globalSearchMatches(State.q,1);
-        if(matches.length){ State.sel=matches[0].t; State.tab="stocks"; State.q=""; render(); }
-      } else if(e.key==="Escape"){ State.q=""; render(); }
-    };
-    globalSearchBox.focus(); globalSearchBox.setSelectionRange(State.q.length,State.q.length);
-  }
-  root.querySelectorAll("[data-jumpto]").forEach(el=>el.onclick=()=>{
-    State.sel=el.dataset.jumpto; State.tab="stocks"; State.q=""; State.kpiExpanded=false; render();
-  });
-
-  root.querySelectorAll("[data-earningmarker]").forEach(el=>el.onclick=(e)=>{
-    e.stopPropagation();
-    const row = document.getElementById(`earnrow-${el.dataset.earningmarker}`);
-    if(row){
-      row.scrollIntoView({behavior:"smooth", block:"center"});
-      row.style.transition="background .3s"; row.style.background="var(--accent-soft)";
-      setTimeout(()=>{ row.style.background=""; }, 1600);
-    }
-  });
+  const searchBox=document.getElementById("searchBox");
+  if(searchBox){ searchBox.oninput=e=>{State.q=e.target.value;render();}; searchBox.focus(); searchBox.setSelectionRange(State.q.length,State.q.length); }
 
   root.querySelectorAll("[data-open]").forEach(el=>el.onclick=(e)=>{ if(e.target.closest('[data-star]')||e.target.closest('[data-cmp]'))return; State.sel=el.dataset.open;State.tab="stocks";State.kpiExpanded=false;render();});
   root.querySelectorAll("[data-opensector]").forEach(el=>el.onclick=()=>{ if(el.dataset.opensector){State.sel=el.dataset.opensector;State.tab="stocks";render();}});
