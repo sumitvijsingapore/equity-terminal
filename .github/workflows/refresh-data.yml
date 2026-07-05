@@ -2,8 +2,7 @@ name: Refresh market data
 
 on:
   schedule:
-    - cron: "0 20 * * *"    # daily at 20:00 UTC = 4:00 AM Singapore time — prices + fundamentals
-    - cron: "0 20 * * 6"    # weekly Sat 20:00 UTC = Sun 4:00 AM Singapore time — + EDGAR + reactions
+    - cron: "17 20 * * *"   # daily at 20:17 UTC = 4:17 AM Singapore time; weekly steps also run Saturdays UTC
   workflow_dispatch: {}
 
 permissions:
