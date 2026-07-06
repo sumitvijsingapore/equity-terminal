@@ -60,9 +60,9 @@ async function importPortfolioFile(input){
   let records=[];
   try{
     if(/\.xlsx?$/i.test(file.name)){
-      if(!window.XLSX) throw new Error("Excel reader did not load. Save the sheet as CSV and try again.");
-      const wb=XLSX.read(await file.arrayBuffer(),{type:"array"});
-      records=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+      const XLSXLib=window.XLSX||await import("https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs");
+      const wb=XLSXLib.read(await file.arrayBuffer(),{type:"array"});
+      records=XLSXLib.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
       records=records.map(r=>Object.fromEntries(Object.entries(r).map(([k,v])=>[k.toLowerCase().replace(/[^a-z0-9]/g,""),String(v).trim()])));
     }else records=parseCsv(await file.text());
     let added=0,skipped=0;
