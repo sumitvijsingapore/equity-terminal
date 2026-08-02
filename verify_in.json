@@ -983,7 +983,7 @@
     "ticker": "SYMPHONY",
     "nseHigh52": 1150.1,
     "nseLow52": 656.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -6.26,
     "low52DiffPct": null
   },
   {
@@ -1228,7 +1228,7 @@
     "ticker": "DHANUKA",
     "nseHigh52": 1975.0,
     "nseLow52": 889.6,
-    "high52DiffPct": null,
+    "high52DiffPct": -15.7,
     "low52DiffPct": null
   },
   {
@@ -1291,7 +1291,7 @@
     "ticker": "SANOFI",
     "nseHigh52": 5924.5,
     "nseLow52": 3054.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -6.25,
     "low52DiffPct": null
   },
   {
@@ -1305,7 +1305,7 @@
     "ticker": "GLAXO",
     "nseHigh52": 3200.0,
     "nseLow52": 2088.1,
-    "high52DiffPct": null,
+    "high52DiffPct": -8.25,
     "low52DiffPct": null
   },
   {
@@ -1760,14 +1760,14 @@
     "ticker": "JUBLPHARMA",
     "nseHigh52": 1248.0,
     "nseLow52": 786.05,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.06,
     "low52DiffPct": null
   },
   {
     "ticker": "JUBLINGREA",
     "nseHigh52": 845.55,
     "nseLow52": 537.3,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.98,
     "low52DiffPct": null
   },
   {
@@ -1816,7 +1816,7 @@
     "ticker": "BASF",
     "nseHigh52": 5150.0,
     "nseLow52": 3122.2,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.58,
     "low52DiffPct": null
   },
   {
@@ -2075,7 +2075,7 @@
     "ticker": "BIRLACORPN",
     "nseHigh52": 1535.3,
     "nseLow52": 769.6,
-    "high52DiffPct": -7.19,
+    "high52DiffPct": -12.32,
     "low52DiffPct": null
   },
   {
