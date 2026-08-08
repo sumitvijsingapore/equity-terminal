@@ -1,5 +1,5 @@
 {
-  "asOf": "2026-08-07 21:34 UTC",
+  "asOf": "2026-08-08 21:21 UTC",
   "series": {
     "us10y": {
       "label": "US 10-Year Treasury Yield",
@@ -20,16 +20,16 @@
     "crude": {
       "label": "Crude Oil (WTI)",
       "unit": "$/bbl",
-      "current": 77.08,
-      "chg30d": 4.84,
-      "chg90d": -19.22,
-      "level1yPct": 37.8
+      "current": 78.18,
+      "chg30d": 6.34,
+      "chg90d": -18.07,
+      "level1yPct": 39.7
     },
     "usdinr": {
       "label": "USD/INR",
       "unit": "\u20b9",
       "current": 95.2,
-      "chg30d": -0.41,
+      "chg30d": -0.69,
       "chg90d": 1.0,
       "level1yPct": 83.0
     },
@@ -52,18 +52,18 @@
     "gold": {
       "label": "Gold",
       "unit": "$/oz",
-      "current": 4401.3,
-      "chg30d": 8.12,
-      "chg90d": -6.76,
-      "level1yPct": 54.3
+      "current": 4340.7,
+      "chg30d": 6.63,
+      "chg90d": -8.04,
+      "level1yPct": 51.2
     },
     "copper": {
       "label": "Copper",
       "unit": "$/lb",
-      "current": 6.59,
-      "chg30d": 8.76,
-      "chg90d": 5.38,
-      "level1yPct": 95.1
+      "current": 6.57,
+      "chg30d": 8.52,
+      "chg90d": 5.14,
+      "level1yPct": 94.2
     }
   }
 }
