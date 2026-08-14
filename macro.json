@@ -1,69 +1,69 @@
 {
-  "asOf": "2026-08-13 21:40 UTC",
+  "asOf": "2026-08-14 21:16 UTC",
   "series": {
     "us10y": {
       "label": "US 10-Year Treasury Yield",
       "unit": "%",
-      "current": 4.64,
-      "chg30d": 1.22,
-      "chg90d": 1.0,
-      "level1yPct": 86.7
+      "current": 4.7,
+      "chg30d": 3.32,
+      "chg90d": 2.2,
+      "level1yPct": 94.3
     },
     "us3m": {
       "label": "US 3-Month Yield",
       "unit": "%",
       "current": 3.7,
-      "chg30d": null,
-      "chg90d": null,
-      "level1yPct": 28.6
+      "chg30d": 0.24,
+      "chg90d": 3.04,
+      "level1yPct": 31.1
     },
     "crude": {
       "label": "Crude Oil (WTI)",
       "unit": "$/bbl",
-      "current": 81.21,
-      "chg30d": 2.36,
-      "chg90d": -22.97,
-      "level1yPct": 45.0
+      "current": 82.4,
+      "chg30d": 3.52,
+      "chg90d": -21.84,
+      "level1yPct": 47.0
     },
     "usdinr": {
       "label": "USD/INR",
       "unit": "\u20b9",
-      "current": 95.43,
-      "chg30d": -0.9,
-      "chg90d": -0.29,
-      "level1yPct": 85.3
+      "current": 95.42,
+      "chg30d": -1.05,
+      "chg90d": -0.31,
+      "level1yPct": 85.2
     },
     "dxy": {
       "label": "US Dollar Index",
       "unit": "",
-      "current": 99.95,
-      "chg30d": -0.98,
-      "chg90d": 0.69,
-      "level1yPct": 69.2
+      "current": 99.64,
+      "chg30d": -0.86,
+      "chg90d": 0.37,
+      "level1yPct": 63.5
     },
     "vix": {
       "label": "VIX (Volatility Index)",
       "unit": "",
-      "current": 14.63,
-      "chg30d": -11.33,
-      "chg90d": -20.62,
-      "level1yPct": 6.6
+      "current": 14.25,
+      "chg30d": -9.06,
+      "chg90d": -22.68,
+      "level1yPct": 4.4
     },
     "gold": {
       "label": "Gold",
       "unit": "$/oz",
-      "current": 4407.1,
-      "chg30d": 8.52,
-      "chg90d": -3.26,
-      "level1yPct": 54.5
+      "current": 4432.0,
+      "chg30d": 9.59,
+      "chg90d": -2.72,
+      "level1yPct": 55.8
     },
     "copper": {
       "label": "Copper",
       "unit": "$/lb",
-      "current": 6.59,
-      "chg30d": 4.1,
-      "chg90d": 5.41,
-      "level1yPct": 95.1
+      "current": 6.61,
+      "chg30d": 4.97,
+      "chg90d": 5.68,
+      "level1yPct": 95.9
     }
   }
 }
