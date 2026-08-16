@@ -127,10 +127,10 @@
   },
   {
     "ticker": "TVSMOTOR",
-    "nseHigh52": 4458.0,
-    "nseLow52": 2931.3,
+    "nseHigh52": 4475.0,
+    "nseLow52": 2963.8,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.69
   },
   {
     "ticker": "SIEMENS",
@@ -302,7 +302,7 @@
   },
   {
     "ticker": "RECLTD",
-    "nseHigh52": 396.7,
+    "nseHigh52": 390.5,
     "nseLow52": 304.05,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -379,7 +379,7 @@
   },
   {
     "ticker": "BOSCHLTD",
-    "nseHigh52": 43650.0,
+    "nseHigh52": 47285.0,
     "nseLow52": 28610.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -401,7 +401,7 @@
   {
     "ticker": "BIOCON",
     "nseHigh52": 447.15,
-    "nseLow52": 331.0,
+    "nseLow52": 337.05,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
