@@ -1,29 +1,29 @@
 {
-  "asOf": "2026-08-30 23:18 UTC",
+  "asOf": "2026-09-01 00:26 UTC",
   "series": {
     "us10y": {
       "label": "US 10-Year Treasury Yield",
       "unit": "%",
-      "current": 4.72,
-      "chg30d": 2.12,
-      "chg90d": 6.0,
-      "level1yPct": 96.8
+      "current": 4.76,
+      "chg30d": 0.27,
+      "chg90d": 6.8,
+      "level1yPct": 100.2
     },
     "us3m": {
       "label": "US 3-Month Yield",
       "unit": "%",
       "current": 3.73,
-      "chg30d": 1.97,
-      "chg90d": 3.96,
-      "level1yPct": 39.5
+      "chg30d": 1.36,
+      "chg90d": 3.15,
+      "level1yPct": 42.5
     },
     "crude": {
       "label": "Crude Oil (WTI)",
       "unit": "$/bbl",
-      "current": 84.85,
-      "chg30d": 0.21,
-      "chg90d": -7.93,
-      "level1yPct": 51.3
+      "current": 86.59,
+      "chg30d": 2.27,
+      "chg90d": -7.65,
+      "level1yPct": 54.3
     },
     "usdinr": {
       "label": "USD/INR",
@@ -36,34 +36,34 @@
     "dxy": {
       "label": "US Dollar Index",
       "unit": "",
-      "current": 99.67,
-      "chg30d": -0.13,
-      "chg90d": 0.48,
-      "level1yPct": 64.0
+      "current": 99.39,
+      "chg30d": -0.41,
+      "chg90d": 0.17,
+      "level1yPct": 58.8
     },
     "vix": {
       "label": "VIX (Volatility Index)",
       "unit": "",
-      "current": 14.43,
-      "chg30d": -30.15,
-      "chg90d": -5.81,
-      "level1yPct": 5.5
+      "current": 14.92,
+      "chg30d": -6.69,
+      "chg90d": -5.39,
+      "level1yPct": 8.2
     },
     "gold": {
       "label": "Gold",
       "unit": "$/oz",
-      "current": 4515.6,
-      "chg30d": 11.52,
-      "chg90d": 0.9,
-      "level1yPct": 54.6
+      "current": 4502.1,
+      "chg30d": 11.19,
+      "chg90d": 0.29,
+      "level1yPct": 53.9
     },
     "copper": {
       "label": "Copper",
       "unit": "$/lb",
-      "current": 6.64,
-      "chg30d": 3.18,
-      "chg90d": 1.79,
-      "level1yPct": 96.9
+      "current": 6.71,
+      "chg30d": 4.27,
+      "chg90d": 0.92,
+      "level1yPct": 100.0
     }
   }
 }
