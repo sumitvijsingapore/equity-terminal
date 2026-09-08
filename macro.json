@@ -1,45 +1,45 @@
 {
-  "asOf": "2026-09-07 23:23 UTC",
+  "asOf": "2026-09-08 23:12 UTC",
   "series": {
     "us10y": {
       "label": "US 10-Year Treasury Yield",
       "unit": "%",
-      "current": 4.78,
-      "chg30d": 3.62,
-      "chg90d": 5.47,
-      "level1yPct": 98.1
+      "current": 4.81,
+      "chg30d": 3.13,
+      "chg90d": 5.81,
+      "level1yPct": 100.5
     },
     "us3m": {
       "label": "US 3-Month Yield",
       "unit": "%",
-      "current": 3.76,
-      "chg30d": 0.86,
-      "chg90d": 3.64,
-      "level1yPct": 51.5
+      "current": 3.78,
+      "chg30d": 1.75,
+      "chg90d": 3.85,
+      "level1yPct": 62.6
     },
     "crude": {
       "label": "Crude Oil (WTI)",
       "unit": "$/bbl",
-      "current": 92.61,
-      "chg30d": 18.46,
-      "chg90d": 5.0,
-      "level1yPct": 64.7
+      "current": 94.27,
+      "chg30d": 20.58,
+      "chg90d": 4.71,
+      "level1yPct": 67.6
     },
     "usdinr": {
       "label": "USD/INR",
       "unit": "\u20b9",
-      "current": 94.43,
-      "chg30d": -0.92,
-      "chg90d": -1.31,
-      "level1yPct": 73.2
+      "current": 94.49,
+      "chg30d": -0.86,
+      "chg90d": -0.91,
+      "level1yPct": 73.9
     },
     "dxy": {
       "label": "US Dollar Index",
       "unit": "",
-      "current": 99.18,
-      "chg30d": -0.43,
-      "chg90d": -0.73,
-      "level1yPct": 54.9
+      "current": 98.92,
+      "chg30d": -0.68,
+      "chg90d": -1.13,
+      "level1yPct": 50.1
     },
     "vix": {
       "label": "VIX (Volatility Index)",
@@ -52,18 +52,18 @@
     "gold": {
       "label": "Gold",
       "unit": "$/oz",
-      "current": 4456.6,
-      "chg30d": 2.67,
-      "chg90d": 4.62,
-      "level1yPct": 48.7
+      "current": 4398.2,
+      "chg30d": 1.32,
+      "chg90d": 7.06,
+      "level1yPct": 45.3
     },
     "copper": {
       "label": "Copper",
       "unit": "$/lb",
-      "current": 6.72,
-      "chg30d": 2.32,
-      "chg90d": 6.67,
-      "level1yPct": 99.9
+      "current": 6.77,
+      "chg30d": 3.1,
+      "chg90d": 8.41,
+      "level1yPct": 99.8
     }
   }
 }
