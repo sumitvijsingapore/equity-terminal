@@ -2054,7 +2054,7 @@
     "ticker": "GREENPANEL",
     "nseHigh52": 333.8,
     "nseLow52": 152.91,
-    "high52DiffPct": -5.17,
+    "high52DiffPct": -5.33,
     "low52DiffPct": null
   },
   {
@@ -2152,7 +2152,7 @@
     "ticker": "HATSUN",
     "nseHigh52": 1240.2,
     "nseLow52": 855.3,
-    "high52DiffPct": null,
+    "high52DiffPct": 8.83,
     "low52DiffPct": null
   },
   {
@@ -2313,7 +2313,7 @@
     "ticker": "RAYMOND",
     "nseHigh52": 1024.5,
     "nseLow52": 320.0,
-    "high52DiffPct": null,
+    "high52DiffPct": 9.52,
     "low52DiffPct": null
   },
   {
@@ -2461,7 +2461,7 @@
     "nseHigh52": 325.0,
     "nseLow52": 158.17,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": -11.29
   },
   {
     "ticker": "HGINFRA",
