@@ -1507,7 +1507,7 @@
   {
     "ticker": "MCX",
     "nseHigh52": 3480.0,
-    "nseLow52": 1496.0,
+    "nseLow52": 1536.6,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1751,7 +1751,7 @@
   },
   {
     "ticker": "JUBLFOOD",
-    "nseHigh52": 667.75,
+    "nseHigh52": 636.0,
     "nseLow52": 408.55,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -2697,7 +2697,7 @@
   {
     "ticker": "RELIANCE",
     "nseHigh52": 1611.8,
-    "nseLow52": 1249.8,
+    "nseLow52": 1235.3,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
