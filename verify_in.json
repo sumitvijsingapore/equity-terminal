@@ -302,7 +302,7 @@
   },
   {
     "ticker": "RECLTD",
-    "nseHigh52": 390.5,
+    "nseHigh52": 390.3,
     "nseLow52": 304.05,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1507,7 +1507,7 @@
   {
     "ticker": "MCX",
     "nseHigh52": 3480.0,
-    "nseLow52": 1536.6,
+    "nseLow52": 1545.1,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1751,7 +1751,7 @@
   },
   {
     "ticker": "JUBLFOOD",
-    "nseHigh52": 636.0,
+    "nseHigh52": 635.0,
     "nseLow52": 408.55,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1949,7 +1949,7 @@
     "ticker": "SANSERA",
     "nseHigh52": 4328.0,
     "nseLow52": 1364.2,
-    "high52DiffPct": null,
+    "high52DiffPct": 6.98,
     "low52DiffPct": null
   },
   {
@@ -2313,7 +2313,7 @@
     "ticker": "RAYMOND",
     "nseHigh52": 1122.0,
     "nseLow52": 320.0,
-    "high52DiffPct": null,
+    "high52DiffPct": 6.36,
     "low52DiffPct": null
   },
   {
@@ -2697,7 +2697,7 @@
   {
     "ticker": "RELIANCE",
     "nseHigh52": 1611.8,
-    "nseLow52": 1235.3,
+    "nseLow52": 1226.4,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -2950,7 +2950,7 @@
     "ticker": "TRENT",
     "nseHigh52": 3425.33,
     "nseLow52": 2183.67,
-    "high52DiffPct": 50.0,
+    "high52DiffPct": 46.54,
     "low52DiffPct": null
   },
   {
