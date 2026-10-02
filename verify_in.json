@@ -424,7 +424,7 @@
     "nseHigh52": 3987.8,
     "nseLow52": 2700.0,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": -5.55
   },
   {
     "ticker": "PERSISTENT",
@@ -585,7 +585,7 @@
     "nseHigh52": 1964.2,
     "nseLow52": 1031.4,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": -6.54
   },
   {
     "ticker": "NYKAA",
@@ -2299,7 +2299,7 @@
     "ticker": "WELSPUNLIV",
     "nseHigh52": 233.0,
     "nseLow52": 107.1,
-    "high52DiffPct": null,
+    "high52DiffPct": 5.1,
     "low52DiffPct": null
   },
   {
