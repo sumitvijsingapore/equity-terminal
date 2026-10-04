@@ -1558,7 +1558,7 @@
     "nseHigh52": 1153.7,
     "nseLow52": 611.15,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.78
   },
   {
     "ticker": "M&MFIN",
@@ -1879,7 +1879,7 @@
     "ticker": "TATAINVEST",
     "nseHigh52": 1184.7,
     "nseLow52": 538.85,
-    "high52DiffPct": null,
+    "high52DiffPct": -8.67,
     "low52DiffPct": null
   },
   {
@@ -2957,7 +2957,7 @@
     "ticker": "GENSOL",
     "nseHigh52": 39.44,
     "nseLow52": 14.39,
-    "high52DiffPct": 5.27,
+    "high52DiffPct": null,
     "low52DiffPct": null
   }
 ]
