@@ -1507,7 +1507,7 @@
   {
     "ticker": "MCX",
     "nseHigh52": 3481.4,
-    "nseLow52": 1626.0,
+    "nseLow52": 1762.1,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1879,7 +1879,7 @@
     "ticker": "TATAINVEST",
     "nseHigh52": 1082.0,
     "nseLow52": 538.85,
-    "high52DiffPct": -6.47,
+    "high52DiffPct": -11.74,
     "low52DiffPct": null
   },
   {
@@ -1900,7 +1900,7 @@
     "ticker": "SKFINDIA",
     "nseHigh52": 5074.0,
     "nseLow52": 1386.4,
-    "high52DiffPct": -54.67,
+    "high52DiffPct": -55.09,
     "low52DiffPct": null
   },
   {
@@ -2607,7 +2607,7 @@
     "ticker": "MAPMYINDIA",
     "nseHigh52": 1998.0,
     "nseLow52": 795.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -6.47,
     "low52DiffPct": null
   },
   {
@@ -2697,7 +2697,7 @@
   {
     "ticker": "RELIANCE",
     "nseHigh52": 1611.8,
-    "nseLow52": 1160.8,
+    "nseLow52": 1152.2,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -2921,7 +2921,7 @@
   {
     "ticker": "IOC",
     "nseHigh52": 188.96,
-    "nseLow52": 125.27,
+    "nseLow52": 124.92,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
