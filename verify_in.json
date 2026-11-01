@@ -1131,7 +1131,7 @@
     "nseHigh52": 8949.5,
     "nseLow52": 4890.7,
     "high52DiffPct": null,
-    "low52DiffPct": 10.99
+    "low52DiffPct": 11.23
   },
   {
     "ticker": "ATUL",
@@ -1228,7 +1228,7 @@
     "ticker": "DHANUKA",
     "nseHigh52": 1470.0,
     "nseLow52": 820.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -6.19,
     "low52DiffPct": null
   },
   {
@@ -1558,7 +1558,7 @@
     "nseHigh52": 1153.7,
     "nseLow52": 717.4,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.73
   },
   {
     "ticker": "M&MFIN",
@@ -1781,7 +1781,7 @@
     "ticker": "SAPPHIRE",
     "nseHigh52": 310.5,
     "nseLow52": 139.91,
-    "high52DiffPct": null,
+    "high52DiffPct": -7.25,
     "low52DiffPct": null
   },
   {
@@ -1935,7 +1935,7 @@
     "ticker": "SUBROS",
     "nseHigh52": 1150.0,
     "nseLow52": 572.2,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.84,
     "low52DiffPct": null
   },
   {
@@ -2376,7 +2376,7 @@
     "ticker": "BLUEDART",
     "nseHigh52": 7036.0,
     "nseLow52": 4151.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -7.05,
     "low52DiffPct": null
   },
   {
@@ -2950,7 +2950,7 @@
     "ticker": "TRENT",
     "nseHigh52": 3399.7,
     "nseLow52": 2183.67,
-    "high52DiffPct": 39.69,
+    "high52DiffPct": 38.98,
     "low52DiffPct": null
   },
   {
