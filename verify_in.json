@@ -176,7 +176,7 @@
   },
   {
     "ticker": "DIVISLAB",
-    "nseHigh52": 9990.0,
+    "nseHigh52": 10064.0,
     "nseLow52": 5647.5,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -197,7 +197,7 @@
   },
   {
     "ticker": "ETERNAL",
-    "nseHigh52": 348.35,
+    "nseHigh52": 350.2,
     "nseLow52": 212.6,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -422,7 +422,7 @@
   {
     "ticker": "ESCORTS",
     "nseHigh52": 3987.8,
-    "nseLow52": 2411.6,
+    "nseLow52": 2376.4,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -583,7 +583,7 @@
   {
     "ticker": "POLICYBZR",
     "nseHigh52": 1964.2,
-    "nseLow52": 923.3,
+    "nseLow52": 916.0,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -792,7 +792,7 @@
   },
   {
     "ticker": "TANLA",
-    "nseHigh52": 656.0,
+    "nseHigh52": 677.9,
     "nseLow52": 365.9,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1471,7 +1471,7 @@
   },
   {
     "ticker": "ANANDRATHI",
-    "nseHigh52": 2297.0,
+    "nseHigh52": 2298.8,
     "nseLow52": 1353.85,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1689,7 +1689,7 @@
   {
     "ticker": "CSBBANK",
     "nseHigh52": 574.4,
-    "nseLow52": 294.15,
+    "nseLow52": 294.05,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
