@@ -127,7 +127,7 @@
   },
   {
     "ticker": "TVSMOTOR",
-    "nseHigh52": 4484.5,
+    "nseHigh52": 4490.0,
     "nseLow52": 3228.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -303,7 +303,7 @@
   {
     "ticker": "RECLTD",
     "nseHigh52": 387.8,
-    "nseLow52": 283.1,
+    "nseLow52": 281.9,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -379,7 +379,7 @@
   },
   {
     "ticker": "BOSCHLTD",
-    "nseHigh52": 50000.0,
+    "nseHigh52": 52475.0,
     "nseLow52": 28610.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -626,7 +626,7 @@
     "ticker": "KAYNES",
     "nseHigh52": 6890.0,
     "nseLow52": 2995.0,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.24,
     "low52DiffPct": null
   },
   {
@@ -851,7 +851,7 @@
     "nseHigh52": 1768.7,
     "nseLow52": 1311.6,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": -7.33
   },
   {
     "ticker": "FINPIPE",
@@ -1263,7 +1263,7 @@
     "ticker": "GLENMARK",
     "nseHigh52": 2542.2,
     "nseLow52": 1801.4,
-    "high52DiffPct": null,
+    "high52DiffPct": 5.52,
     "low52DiffPct": null
   },
   {
@@ -1506,7 +1506,7 @@
   },
   {
     "ticker": "MCX",
-    "nseHigh52": 3481.4,
+    "nseHigh52": 3538.0,
     "nseLow52": 1762.1,
     "high52DiffPct": null,
     "low52DiffPct": null
