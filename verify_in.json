@@ -15,7 +15,7 @@
   },
   {
     "ticker": "TECHM",
-    "nseHigh52": 1854.0,
+    "nseHigh52": 1860.0,
     "nseLow52": 1304.1,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -127,7 +127,7 @@
   },
   {
     "ticker": "TVSMOTOR",
-    "nseHigh52": 4490.0,
+    "nseHigh52": 4495.6,
     "nseLow52": 3228.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -176,7 +176,7 @@
   },
   {
     "ticker": "DIVISLAB",
-    "nseHigh52": 10159.0,
+    "nseHigh52": 10320.5,
     "nseLow52": 5647.5,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -197,7 +197,7 @@
   },
   {
     "ticker": "ETERNAL",
-    "nseHigh52": 359.7,
+    "nseHigh52": 363.15,
     "nseLow52": 212.6,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -323,7 +323,7 @@
   },
   {
     "ticker": "MARICO",
-    "nseHigh52": 897.0,
+    "nseHigh52": 898.55,
     "nseLow52": 705.8,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -331,7 +331,7 @@
   {
     "ticker": "PIIND",
     "nseHigh52": 3832.9,
-    "nseLow52": 1749.5,
+    "nseLow52": 1716.4,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -393,7 +393,7 @@
   },
   {
     "ticker": "AUROPHARMA",
-    "nseHigh52": 1796.8,
+    "nseHigh52": 1805.0,
     "nseLow52": 1106.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -435,7 +435,7 @@
   },
   {
     "ticker": "COFORGE",
-    "nseHigh52": 2119.0,
+    "nseHigh52": 2127.9,
     "nseLow52": 1008.1,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -471,7 +471,7 @@
   {
     "ticker": "SUPREMEIND",
     "nseHigh52": 4074.8,
-    "nseLow52": 3127.0,
+    "nseLow52": 3078.5,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -849,9 +849,9 @@
   {
     "ticker": "ASTRAL",
     "nseHigh52": 1768.7,
-    "nseLow52": 1311.6,
+    "nseLow52": 1215.5,
     "high52DiffPct": null,
-    "low52DiffPct": -7.33
+    "low52DiffPct": null
   },
   {
     "ticker": "FINPIPE",
@@ -919,7 +919,7 @@
   {
     "ticker": "THERMAX",
     "nseHigh52": 5277.8,
-    "nseLow52": 2742.7,
+    "nseLow52": 2666.6,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1128,7 +1128,7 @@
   },
   {
     "ticker": "NAVINFLUOR",
-    "nseHigh52": 8949.5,
+    "nseHigh52": 9035.0,
     "nseLow52": 5440.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1261,9 +1261,9 @@
   },
   {
     "ticker": "GLENMARK",
-    "nseHigh52": 2542.2,
+    "nseHigh52": 2682.5,
     "nseLow52": 1801.4,
-    "high52DiffPct": 5.52,
+    "high52DiffPct": null,
     "low52DiffPct": null
   },
   {
@@ -1471,14 +1471,14 @@
   },
   {
     "ticker": "ANANDRATHI",
-    "nseHigh52": 2388.0,
+    "nseHigh52": 2390.0,
     "nseLow52": 1353.85,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
   {
     "ticker": "MOTILALOFS",
-    "nseHigh52": 1095.85,
+    "nseHigh52": 1105.0,
     "nseLow52": 614.9,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1506,10 +1506,10 @@
   },
   {
     "ticker": "MCX",
-    "nseHigh52": 3538.0,
+    "nseHigh52": 3550.0,
     "nseLow52": 1762.1,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.87
   },
   {
     "ticker": "BSE",
@@ -1626,7 +1626,7 @@
   {
     "ticker": "APTUS",
     "nseHigh52": 309.0,
-    "nseLow52": 177.38,
+    "nseLow52": 172.0,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1674,7 +1674,7 @@
   },
   {
     "ticker": "SOUTHBANK",
-    "nseHigh52": 57.28,
+    "nseHigh52": 57.9,
     "nseLow52": 33.38,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1786,7 +1786,7 @@
   },
   {
     "ticker": "WESTLIFE",
-    "nseHigh52": 661.0,
+    "nseHigh52": 665.7,
     "nseLow52": 398.4,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1815,7 +1815,7 @@
   {
     "ticker": "BASF",
     "nseHigh52": 4560.0,
-    "nseLow52": 2936.8,
+    "nseLow52": 2922.1,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -2010,7 +2010,7 @@
   },
   {
     "ticker": "SHYAMMETL",
-    "nseHigh52": 1283.7,
+    "nseHigh52": 1305.0,
     "nseLow52": 746.0,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -2368,7 +2368,7 @@
   {
     "ticker": "VIPIND",
     "nseHigh52": 435.0,
-    "nseLow52": 241.2,
+    "nseLow52": 238.95,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -2446,7 +2446,7 @@
     "ticker": "NCC",
     "nseHigh52": 206.29,
     "nseLow52": 113.5,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.02,
     "low52DiffPct": null
   },
   {
@@ -2508,7 +2508,7 @@
   {
     "ticker": "RAJESHEXPO",
     "nseHigh52": 237.88,
-    "nseLow52": 48.6,
+    "nseLow52": 48.39,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -2717,7 +2717,7 @@
   },
   {
     "ticker": "ICICIBANK",
-    "nseHigh52": 1501.4,
+    "nseHigh52": 1571.2,
     "nseLow52": 1187.6,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -2801,7 +2801,7 @@
   },
   {
     "ticker": "KOTAKBANK",
-    "nseHigh52": 472.5,
+    "nseHigh52": 480.0,
     "nseLow52": 345.5,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -2950,7 +2950,7 @@
     "ticker": "TRENT",
     "nseHigh52": 3399.7,
     "nseLow52": 2183.67,
-    "high52DiffPct": 38.49,
+    "high52DiffPct": 34.71,
     "low52DiffPct": null
   },
   {
