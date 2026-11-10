@@ -178,7 +178,7 @@
     "ticker": "DIVISLAB",
     "nseHigh52": 11194.0,
     "nseLow52": 5647.5,
-    "high52DiffPct": null,
+    "high52DiffPct": 5.63,
     "low52DiffPct": null
   },
   {
@@ -1382,7 +1382,7 @@
     "ticker": "GLAND",
     "nseHigh52": 3208.6,
     "nseLow52": 1573.6,
-    "high52DiffPct": null,
+    "high52DiffPct": 5.15,
     "low52DiffPct": null
   },
   {
