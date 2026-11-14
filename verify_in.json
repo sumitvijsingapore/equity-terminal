@@ -1852,7 +1852,7 @@
     "nseHigh52": 1814.1,
     "nseLow52": 731.2,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 6.06
   },
   {
     "ticker": "PCBL",
@@ -1957,7 +1957,7 @@
     "nseHigh52": 154.0,
     "nseLow52": 97.79,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.38
   },
   {
     "ticker": "RKFORGE",
@@ -2033,7 +2033,7 @@
     "ticker": "SURYAROSNI",
     "nseHigh52": 307.0,
     "nseLow52": 187.35,
-    "high52DiffPct": -7.31,
+    "high52DiffPct": -7.96,
     "low52DiffPct": null
   },
   {

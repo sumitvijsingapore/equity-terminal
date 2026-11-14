@@ -1,29 +1,29 @@
 {
-  "asOf": "2026-11-13 01:40 UTC",
+  "asOf": "2026-11-14 01:28 UTC",
   "series": {
     "us10y": {
       "label": "US 10-Year Treasury Yield",
       "unit": "%",
-      "current": 5.1,
-      "chg30d": -2.19,
-      "chg90d": 8.67,
-      "level1yPct": 84.4
+      "current": 5.15,
+      "chg30d": -0.69,
+      "chg90d": 9.75,
+      "level1yPct": 88.1
     },
     "us3m": {
       "label": "US 3-Month Yield",
       "unit": "%",
-      "current": 4.13,
-      "chg30d": 1.75,
-      "chg90d": 11.66,
-      "level1yPct": 100.3
+      "current": 4.12,
+      "chg30d": 0.91,
+      "chg90d": 11.5,
+      "level1yPct": 98.7
     },
     "crude": {
       "label": "Crude Oil (WTI)",
       "unit": "$/bbl",
-      "current": 88.3,
-      "chg30d": -6.2,
-      "chg90d": 7.16,
-      "level1yPct": 57.3
+      "current": 88.92,
+      "chg30d": -6.49,
+      "chg90d": 7.91,
+      "level1yPct": 58.3
     },
     "usdinr": {
       "label": "USD/INR",
@@ -36,34 +36,34 @@
     "dxy": {
       "label": "US Dollar Index",
       "unit": "",
-      "current": 103.14,
-      "chg30d": 0.94,
-      "chg90d": 3.48,
+      "current": 103.41,
+      "chg30d": 0.84,
+      "chg90d": 3.75,
       "level1yPct": 100.0
     },
     "vix": {
       "label": "VIX (Volatility Index)",
       "unit": "",
-      "current": 18.7,
-      "chg30d": 22.46,
-      "chg90d": 31.23,
-      "level1yPct": 29.7
+      "current": 19.3,
+      "chg30d": 14.4,
+      "chg90d": 35.44,
+      "level1yPct": 33.2
     },
     "gold": {
       "label": "Gold",
       "unit": "$/oz",
-      "current": 3918.2,
-      "chg30d": -6.2,
-      "chg90d": -11.7,
-      "level1yPct": 1.4
+      "current": 3887.6,
+      "chg30d": -5.36,
+      "chg90d": -12.39,
+      "level1yPct": 0.2
     },
     "copper": {
       "label": "Copper",
       "unit": "$/lb",
-      "current": 6.23,
-      "chg30d": -6.72,
-      "chg90d": -5.61,
-      "level1yPct": 68.9
+      "current": 6.06,
+      "chg30d": -8.29,
+      "chg90d": -8.12,
+      "level1yPct": 59.7
     }
   }
 }
