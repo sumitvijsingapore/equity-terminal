@@ -1404,7 +1404,7 @@
     "nseHigh52": 2038.0,
     "nseLow52": 1293.9,
     "high52DiffPct": null,
-    "low52DiffPct": null
+    "low52DiffPct": 5.24
   },
   {
     "ticker": "STAR",
@@ -1852,7 +1852,7 @@
     "nseHigh52": 1814.1,
     "nseLow52": 731.2,
     "high52DiffPct": null,
-    "low52DiffPct": 6.06
+    "low52DiffPct": 9.47
   },
   {
     "ticker": "PCBL",
@@ -2460,7 +2460,7 @@
     "ticker": "PNCINFRA",
     "nseHigh52": 291.45,
     "nseLow52": 116.4,
-    "high52DiffPct": null,
+    "high52DiffPct": -6.04,
     "low52DiffPct": null
   },
   {
@@ -2474,7 +2474,7 @@
     "ticker": "ASHOKA",
     "nseHigh52": 203.79,
     "nseLow52": 95.31,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.29,
     "low52DiffPct": null
   },
   {
@@ -2642,7 +2642,7 @@
     "ticker": "SONATSOFTW",
     "nseHigh52": 400.5,
     "nseLow52": 207.15,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.89,
     "low52DiffPct": null
   },
   {
