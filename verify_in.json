@@ -1506,8 +1506,8 @@
   },
   {
     "ticker": "MCX",
-    "nseHigh52": 3772.6,
-    "nseLow52": 1921.4,
+    "nseHigh52": 3774.0,
+    "nseLow52": 1929.9,
     "high52DiffPct": null,
     "low52DiffPct": null
   },
@@ -1751,7 +1751,7 @@
   },
   {
     "ticker": "JUBLFOOD",
-    "nseHigh52": 619.0,
+    "nseHigh52": 612.9,
     "nseLow52": 397.8,
     "high52DiffPct": null,
     "low52DiffPct": null
@@ -1809,7 +1809,7 @@
     "ticker": "KSCL",
     "nseHigh52": 1081.6,
     "nseLow52": 642.95,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.23,
     "low52DiffPct": null
   },
   {
@@ -2348,7 +2348,7 @@
     "ticker": "RUPA",
     "nseHigh52": 193.31,
     "nseLow52": 109.21,
-    "high52DiffPct": null,
+    "high52DiffPct": -5.23,
     "low52DiffPct": null
   },
   {
@@ -2950,7 +2950,7 @@
     "ticker": "TRENT",
     "nseHigh52": 3399.7,
     "nseLow52": 2183.67,
-    "high52DiffPct": 29.95,
+    "high52DiffPct": 29.33,
     "low52DiffPct": null
   },
   {

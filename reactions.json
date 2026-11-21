@@ -131,42 +131,42 @@
     "returns": [
       {
         "date": "2026-04-29",
-        "priceAtFiling": 115.03,
+        "priceAtFiling": 114.48,
         "reaction1d": -2.19,
         "forward60d": 3.87,
         "forward90d": 12.06
       },
       {
         "date": "2026-02-04",
-        "priceAtFiling": 111.87,
+        "priceAtFiling": 111.34,
         "reaction1d": 3.39,
         "forward60d": -2.44,
         "forward90d": 1.27
       },
       {
         "date": "2025-11-04",
-        "priceAtFiling": 106.58,
+        "priceAtFiling": 106.07,
         "reaction1d": 2.23,
         "forward60d": 3.64,
         "forward90d": 3.42
       },
       {
         "date": "2025-08-05",
-        "priceAtFiling": 96.37,
+        "priceAtFiling": 95.91,
         "reaction1d": 3.43,
         "forward60d": 14.93,
         "forward90d": 8.73
       },
       {
         "date": "2025-04-30",
-        "priceAtFiling": 105.3,
+        "priceAtFiling": 104.79,
         "reaction1d": -4.75,
         "forward60d": -2.43,
         "forward90d": -6.72
       },
       {
         "date": "2025-02-05",
-        "priceAtFiling": 103.37,
+        "priceAtFiling": 102.88,
         "reaction1d": -3.92,
         "forward60d": -6.27,
         "forward90d": -0.74
@@ -795,35 +795,35 @@
     "returns": [
       {
         "date": "2026-11-03",
-        "priceAtFiling": 113.55,
+        "priceAtFiling": 113.01,
         "reaction1d": 8.11,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-08-04",
-        "priceAtFiling": 132.64,
+        "priceAtFiling": 132.01,
         "reaction1d": -2.6,
         "forward60d": -13.04,
         "forward90d": -9.94
       },
       {
         "date": "2026-05-06",
-        "priceAtFiling": 128.44,
+        "priceAtFiling": 127.83,
         "reaction1d": -1.34,
         "forward60d": -5.28,
         "forward90d": 3.27
       },
       {
         "date": "2026-02-09",
-        "priceAtFiling": 132.29,
+        "priceAtFiling": 131.65,
         "reaction1d": -1.13,
         "forward60d": -21.83,
         "forward90d": -2.21
       },
       {
         "date": "2025-11-04",
-        "priceAtFiling": 128.39,
+        "priceAtFiling": 127.77,
         "reaction1d": 2.48,
         "forward60d": 15.2,
         "forward90d": 2.45
@@ -992,52 +992,52 @@
     "returns": [
       {
         "date": "2026-05-05",
-        "priceAtFiling": 78.18,
+        "priceAtFiling": 77.59,
         "reaction1d": -1.48,
         "forward60d": -0.94,
         "forward90d": -0.78
       },
       {
         "date": "2026-02-03",
-        "priceAtFiling": 66.03,
+        "priceAtFiling": 65.53,
         "reaction1d": -0.07,
         "forward60d": 9.71,
         "forward90d": 14.03
       },
       {
         "date": "2025-11-04",
-        "priceAtFiling": 58.41,
+        "priceAtFiling": 57.98,
         "reaction1d": -6.37,
         "forward60d": -0.06,
         "forward90d": 14.19
       },
       {
         "date": "2025-08-05",
-        "priceAtFiling": 55.51,
+        "priceAtFiling": 55.09,
         "reaction1d": -1.54,
         "forward60d": 9.31,
         "forward90d": 5.18
       },
       {
         "date": "2025-05-06",
-        "priceAtFiling": 46.08,
+        "priceAtFiling": 45.73,
         "reaction1d": -0.91,
         "forward60d": 13.99,
         "forward90d": 13.66
       },
       {
         "date": "2025-02-04",
-        "priceAtFiling": 44.78,
+        "priceAtFiling": 44.45,
         "reaction1d": -2.19,
         "forward60d": -8.48,
         "forward90d": 1.14
       },
       {
         "date": "2024-11-18",
-        "priceAtFiling": 49.24,
-        "reaction1d": 0.53,
-        "forward60d": -1.78,
-        "forward90d": -11.1
+        "priceAtFiling": 49.78,
+        "reaction1d": 0.0,
+        "forward60d": -3.57,
+        "forward90d": -12.72
       }
     ]
   },
@@ -2214,42 +2214,42 @@
     "returns": [
       {
         "date": "2026-04-21",
-        "priceAtFiling": 200.92,
+        "priceAtFiling": 200.1,
         "reaction1d": -1.52,
         "forward60d": -0.46,
         "forward90d": 2.55
       },
       {
         "date": "2026-01-22",
-        "priceAtFiling": 232.35,
+        "priceAtFiling": 231.4,
         "reaction1d": -7.56,
         "forward60d": -21.43,
         "forward90d": -14.84
       },
       {
         "date": "2025-10-21",
-        "priceAtFiling": 213.73,
+        "priceAtFiling": 212.85,
         "reaction1d": 1.53,
         "forward60d": 14.13,
         "forward90d": 5.78
       },
       {
         "date": "2025-07-22",
-        "priceAtFiling": 213.51,
+        "priceAtFiling": 212.64,
         "reaction1d": 0.94,
         "forward60d": 3.96,
         "forward90d": -0.9
       },
       {
         "date": "2025-04-22",
-        "priceAtFiling": 166.61,
+        "priceAtFiling": 165.93,
         "reaction1d": 3.68,
         "forward60d": 18.85,
         "forward90d": 27.24
       },
       {
         "date": "2025-01-21",
-        "priceAtFiling": 188.57,
+        "priceAtFiling": 187.8,
         "reaction1d": 4.0,
         "forward60d": -6.11,
         "forward90d": -14.26
@@ -2514,28 +2514,28 @@
     "returns": [
       {
         "date": "2026-10-27",
-        "priceAtFiling": 41.97,
+        "priceAtFiling": 41.72,
         "reaction1d": -0.91,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-07-28",
-        "priceAtFiling": 43.84,
+        "priceAtFiling": 43.57,
         "reaction1d": -2.65,
         "forward60d": -16.47,
         "forward90d": -6.02
       },
       {
         "date": "2026-04-23",
-        "priceAtFiling": 42.69,
+        "priceAtFiling": 42.43,
         "reaction1d": -1.64,
         "forward60d": 0.41,
         "forward90d": 1.71
       },
       {
         "date": "2025-02-20",
-        "priceAtFiling": 32.59,
+        "priceAtFiling": 32.4,
         "reaction1d": 1.66,
         "forward60d": 8.18,
         "forward90d": 11.01
@@ -2548,70 +2548,70 @@
     "returns": [
       {
         "date": "2026-05-06",
-        "priceAtFiling": 118.66,
+        "priceAtFiling": 118.09,
         "reaction1d": -0.9,
         "forward60d": -5.09,
         "forward90d": -0.98
       },
       {
         "date": "2026-05-06",
-        "priceAtFiling": 118.66,
+        "priceAtFiling": 118.09,
         "reaction1d": -0.9,
         "forward60d": -5.09,
         "forward90d": -0.98
       },
       {
         "date": "2026-02-18",
-        "priceAtFiling": 94.94,
+        "priceAtFiling": 94.49,
         "reaction1d": 3.8,
         "forward60d": 21.0,
         "forward90d": 33.98
       },
       {
         "date": "2026-02-18",
-        "priceAtFiling": 94.94,
+        "priceAtFiling": 94.49,
         "reaction1d": 3.8,
         "forward60d": 21.0,
         "forward90d": 33.98
       },
       {
         "date": "2025-11-05",
-        "priceAtFiling": 83.33,
+        "priceAtFiling": 82.93,
         "reaction1d": -4.23,
         "forward60d": -5.07,
         "forward90d": 9.41
       },
       {
         "date": "2025-11-05",
-        "priceAtFiling": 83.33,
+        "priceAtFiling": 82.93,
         "reaction1d": -4.23,
         "forward60d": -5.07,
         "forward90d": 9.41
       },
       {
         "date": "2025-08-06",
-        "priceAtFiling": 87.56,
+        "priceAtFiling": 87.14,
         "reaction1d": -7.8,
         "forward60d": 3.01,
         "forward90d": -5.4
       },
       {
         "date": "2025-08-06",
-        "priceAtFiling": 87.56,
+        "priceAtFiling": 87.14,
         "reaction1d": -7.8,
         "forward60d": 3.01,
         "forward90d": -5.4
       },
       {
         "date": "2025-05-07",
-        "priceAtFiling": 78.13,
+        "priceAtFiling": 77.76,
         "reaction1d": 0.78,
         "forward60d": 18.66,
         "forward90d": 15.58
       },
       {
         "date": "2025-05-07",
-        "priceAtFiling": 78.13,
+        "priceAtFiling": 77.76,
         "reaction1d": 0.78,
         "forward60d": 18.66,
         "forward90d": 15.58
@@ -2677,56 +2677,56 @@
     "returns": [
       {
         "date": "2026-10-30",
-        "priceAtFiling": 235.52,
+        "priceAtFiling": 233.58,
         "reaction1d": -3.29,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-07-31",
-        "priceAtFiling": 195.13,
+        "priceAtFiling": 193.52,
         "reaction1d": -1.85,
         "forward60d": 4.74,
         "forward90d": 18.62
       },
       {
         "date": "2026-05-01",
-        "priceAtFiling": 187.27,
+        "priceAtFiling": 185.72,
         "reaction1d": 0.87,
         "forward60d": -12.25,
         "forward90d": 1.81
       },
       {
         "date": "2026-01-30",
-        "priceAtFiling": 172.09,
+        "priceAtFiling": 170.68,
         "reaction1d": -1.62,
         "forward60d": 18.1,
         "forward90d": 10.35
       },
       {
         "date": "2025-10-31",
-        "priceAtFiling": 151.74,
+        "priceAtFiling": 150.49,
         "reaction1d": -2.33,
         "forward60d": -2.35,
         "forward90d": 9.75
       },
       {
         "date": "2025-08-01",
-        "priceAtFiling": 144.06,
+        "priceAtFiling": 142.87,
         "reaction1d": -0.24,
         "forward60d": 3.71,
         "forward90d": 2.53
       },
       {
         "date": "2025-05-02",
-        "priceAtFiling": 130.2,
+        "priceAtFiling": 129.12,
         "reaction1d": -2.17,
         "forward60d": 6.38,
         "forward90d": 10.82
       },
       {
         "date": "2025-01-31",
-        "priceAtFiling": 138.71,
+        "priceAtFiling": 137.56,
         "reaction1d": 0.1,
         "forward60d": 14.2,
         "forward90d": -7.65
@@ -2945,7 +2945,7 @@
         "date": "2025-12-18",
         "priceAtFiling": 188.02,
         "reaction1d": -1.22,
-        "forward60d": 2.89,
+        "forward60d": 2.88,
         "forward90d": -2.12
       },
       {
@@ -3006,16 +3006,9 @@
       {
         "date": "2025-02-12",
         "priceAtFiling": 60.26,
-        "reaction1d": 2.09,
+        "reaction1d": 2.1,
         "forward60d": -7.58,
         "forward90d": -0.54
-      },
-      {
-        "date": "2024-11-13",
-        "priceAtFiling": 55.44,
-        "reaction1d": 0.0,
-        "forward60d": 2.14,
-        "forward90d": 8.52
       }
     ]
   },
@@ -3616,42 +3609,42 @@
     "returns": [
       {
         "date": "2026-05-05",
-        "priceAtFiling": 670.27,
+        "priceAtFiling": 666.77,
         "reaction1d": 6.06,
         "forward60d": 0.81,
         "forward90d": -3.56
       },
       {
         "date": "2026-02-05",
-        "priceAtFiling": 535.16,
+        "priceAtFiling": 532.36,
         "reaction1d": 6.86,
         "forward60d": 2.44,
         "forward90d": 32.83
       },
       {
         "date": "2025-11-06",
-        "priceAtFiling": 456.13,
+        "priceAtFiling": 453.75,
         "reaction1d": 2.28,
         "forward60d": 15.38,
         "forward90d": 31.43
       },
       {
         "date": "2025-08-05",
-        "priceAtFiling": 365.99,
+        "priceAtFiling": 364.07,
         "reaction1d": 2.26,
         "forward60d": 18.19,
         "forward90d": 17.87
       },
       {
         "date": "2025-05-05",
-        "priceAtFiling": 294.76,
+        "priceAtFiling": 293.22,
         "reaction1d": -1.31,
         "forward60d": 9.07,
         "forward90d": 20.29
       },
       {
         "date": "2025-02-04",
-        "priceAtFiling": 352.76,
+        "priceAtFiling": 350.92,
         "reaction1d": 1.76,
         "forward60d": -23.8,
         "forward90d": -16.44
@@ -5582,42 +5575,42 @@
     "returns": [
       {
         "date": "2026-05-07",
-        "priceAtFiling": 19.99,
+        "priceAtFiling": 19.91,
         "reaction1d": 12.33,
         "forward60d": 32.45,
         "forward90d": 39.18
       },
       {
         "date": "2026-02-05",
-        "priceAtFiling": 22.09,
+        "priceAtFiling": 22.0,
         "reaction1d": 8.11,
         "forward60d": -13.18,
         "forward90d": -12.33
       },
       {
         "date": "2025-11-06",
-        "priceAtFiling": 24.95,
+        "priceAtFiling": 24.85,
         "reaction1d": 1.26,
         "forward60d": 3.19,
         "forward90d": -9.48
       },
       {
         "date": "2025-08-07",
-        "priceAtFiling": 27.61,
+        "priceAtFiling": 27.49,
         "reaction1d": 7.71,
         "forward60d": -1.45,
         "forward90d": -8.23
       },
       {
         "date": "2025-05-06",
-        "priceAtFiling": 25.01,
+        "priceAtFiling": 24.9,
         "reaction1d": 8.24,
         "forward60d": 17.54,
         "forward90d": 13.17
       },
       {
         "date": "2025-01-30",
-        "priceAtFiling": 27.0,
+        "priceAtFiling": 26.89,
         "reaction1d": -3.51,
         "forward60d": -4.41,
         "forward90d": -6.83
@@ -6585,42 +6578,42 @@
     "returns": [
       {
         "date": "2026-04-30",
-        "priceAtFiling": 29.64,
+        "priceAtFiling": 29.24,
         "reaction1d": 4.4,
         "forward60d": 27.55,
         "forward90d": 42.26
       },
       {
         "date": "2026-01-29",
-        "priceAtFiling": 37.62,
+        "priceAtFiling": 37.11,
         "reaction1d": 3.38,
         "forward60d": -9.36,
         "forward90d": -13.04
       },
       {
         "date": "2025-10-30",
-        "priceAtFiling": 36.81,
+        "priceAtFiling": 36.31,
         "reaction1d": 0.03,
         "forward60d": 4.46,
         "forward90d": 8.73
       },
       {
         "date": "2025-07-31",
-        "priceAtFiling": 44.1,
+        "priceAtFiling": 43.51,
         "reaction1d": -0.71,
         "forward60d": -0.45,
         "forward90d": -4.44
       },
       {
         "date": "2025-04-30",
-        "priceAtFiling": 42.69,
+        "priceAtFiling": 42.12,
         "reaction1d": -3.92,
         "forward60d": 3.5,
         "forward90d": 20.32
       },
       {
         "date": "2025-01-30",
-        "priceAtFiling": 52.87,
+        "priceAtFiling": 52.16,
         "reaction1d": -2.49,
         "forward60d": -5.7,
         "forward90d": -19.26
@@ -6728,49 +6721,49 @@
     "returns": [
       {
         "date": "2026-06-17",
-        "priceAtFiling": 374.9,
+        "priceAtFiling": 374.78,
         "reaction1d": -0.83,
         "forward60d": -1.34,
         "forward90d": -21.03
       },
       {
         "date": "2026-03-18",
-        "priceAtFiling": 258.56,
+        "priceAtFiling": 258.47,
         "reaction1d": 2.57,
         "forward60d": 30.98,
         "forward90d": 45.2
       },
       {
         "date": "2025-12-17",
-        "priceAtFiling": 216.14,
+        "priceAtFiling": 216.07,
         "reaction1d": 0.34,
         "forward60d": 19.04,
         "forward90d": 21.33
       },
       {
         "date": "2025-09-25",
-        "priceAtFiling": 209.96,
+        "priceAtFiling": 209.89,
         "reaction1d": 2.68,
         "forward60d": -6.17,
         "forward90d": 11.6
       },
       {
         "date": "2025-06-17",
-        "priceAtFiling": 196.59,
+        "priceAtFiling": 196.53,
         "reaction1d": 3.95,
         "forward60d": 9.57,
         "forward90d": 9.78
       },
       {
         "date": "2025-03-20",
-        "priceAtFiling": 143.54,
+        "priceAtFiling": 143.5,
         "reaction1d": 0.97,
         "forward60d": 16.47,
         "forward90d": 42.36
       },
       {
         "date": "2024-12-18",
-        "priceAtFiling": 143.34,
+        "priceAtFiling": 143.29,
         "reaction1d": -2.26,
         "forward60d": 18.31,
         "forward90d": -5.57
@@ -7192,56 +7185,56 @@
     "returns": [
       {
         "date": "2026-06-18",
-        "priceAtFiling": 56.22,
+        "priceAtFiling": 55.91,
         "reaction1d": -1.5,
         "forward60d": -0.27,
         "forward90d": 8.74
       },
       {
         "date": "2026-03-05",
-        "priceAtFiling": 70.71,
+        "priceAtFiling": 70.32,
         "reaction1d": 3.55,
         "forward60d": -5.62,
         "forward90d": -14.0
       },
       {
         "date": "2025-12-04",
-        "priceAtFiling": 62.07,
+        "priceAtFiling": 61.73,
         "reaction1d": -0.68,
         "forward60d": -0.13,
         "forward90d": 8.22
       },
       {
         "date": "2025-09-11",
-        "priceAtFiling": 65.74,
+        "priceAtFiling": 65.38,
         "reaction1d": 1.58,
         "forward60d": -4.15,
         "forward90d": -8.42
       },
       {
         "date": "2025-06-20",
-        "priceAtFiling": 70.02,
+        "priceAtFiling": 69.63,
         "reaction1d": 2.82,
         "forward60d": -1.24,
         "forward90d": -7.84
       },
       {
         "date": "2025-03-06",
-        "priceAtFiling": 61.75,
+        "priceAtFiling": 61.41,
         "reaction1d": 4.58,
         "forward60d": 14.27,
         "forward90d": 4.52
       },
       {
         "date": "2025-03-03",
-        "priceAtFiling": 60.89,
+        "priceAtFiling": 60.55,
         "reaction1d": 0.46,
         "forward60d": 14.52,
         "forward90d": 8.97
       },
       {
         "date": "2024-12-05",
-        "priceAtFiling": 58.49,
+        "priceAtFiling": 58.17,
         "reaction1d": -2.44,
         "forward60d": 4.32,
         "forward90d": 3.5
@@ -7523,13 +7516,6 @@
         "reaction1d": -1.92,
         "forward60d": -18.93,
         "forward90d": -5.35
-      },
-      {
-        "date": "2024-11-12",
-        "priceAtFiling": 129.19,
-        "reaction1d": 0.0,
-        "forward60d": 1.1,
-        "forward90d": 14.02
       }
     ]
   },
@@ -7806,49 +7792,49 @@
     "returns": [
       {
         "date": "2026-11-02",
-        "priceAtFiling": 416.3,
+        "priceAtFiling": 415.59,
         "reaction1d": 0.02,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-08-03",
-        "priceAtFiling": 346.13,
+        "priceAtFiling": 345.53,
         "reaction1d": -0.47,
         "forward60d": 3.71,
         "forward90d": 20.27
       },
       {
         "date": "2026-05-06",
-        "priceAtFiling": 357.63,
+        "priceAtFiling": 357.01,
         "reaction1d": -1.95,
         "forward60d": 5.97,
         "forward90d": -3.67
       },
       {
         "date": "2026-02-10",
-        "priceAtFiling": 357.22,
+        "priceAtFiling": 356.61,
         "reaction1d": -0.17,
         "forward60d": 0.25,
         "forward90d": -1.49
       },
       {
         "date": "2025-11-04",
-        "priceAtFiling": 269.99,
+        "priceAtFiling": 269.53,
         "reaction1d": 3.98,
         "forward60d": 14.52,
         "forward90d": 17.56
       },
       {
         "date": "2025-08-05",
-        "priceAtFiling": 256.92,
+        "priceAtFiling": 256.48,
         "reaction1d": 1.15,
         "forward60d": 4.97,
         "forward90d": 1.86
       },
       {
         "date": "2025-05-06",
-        "priceAtFiling": 248.6,
+        "priceAtFiling": 248.18,
         "reaction1d": 1.6,
         "forward60d": 10.78,
         "forward90d": 3.11
@@ -8283,42 +8269,42 @@
     "returns": [
       {
         "date": "2026-04-29",
-        "priceAtFiling": 422.75,
+        "priceAtFiling": 421.93,
         "reaction1d": -3.93,
         "forward60d": -12.98,
         "forward90d": -7.13
       },
       {
         "date": "2026-01-28",
-        "priceAtFiling": 478.59,
+        "priceAtFiling": 477.67,
         "reaction1d": -9.99,
         "forward60d": -25.3,
         "forward90d": -10.67
       },
       {
         "date": "2025-10-29",
-        "priceAtFiling": 537.13,
+        "priceAtFiling": 536.1,
         "reaction1d": -2.92,
         "forward60d": -9.89,
         "forward90d": -11.09
       },
       {
         "date": "2025-07-30",
-        "priceAtFiling": 508.22,
+        "priceAtFiling": 507.24,
         "reaction1d": 3.95,
         "forward60d": 0.43,
         "forward90d": 5.79
       },
       {
         "date": "2025-04-30",
-        "priceAtFiling": 390.67,
+        "priceAtFiling": 389.92,
         "reaction1d": 7.63,
         "forward60d": 26.07,
         "forward90d": 29.92
       },
       {
         "date": "2025-01-29",
-        "priceAtFiling": 436.32,
+        "priceAtFiling": 435.48,
         "reaction1d": -6.18,
         "forward60d": -14.96,
         "forward90d": -10.74
@@ -8537,13 +8523,6 @@
         "reaction1d": -4.66,
         "forward60d": 18.82,
         "forward90d": 44.92
-      },
-      {
-        "date": "2024-11-12",
-        "priceAtFiling": 24.64,
-        "reaction1d": 0.0,
-        "forward60d": 2.71,
-        "forward90d": 5.04
       }
     ]
   },
@@ -9539,10 +9518,10 @@
       },
       {
         "date": "2024-11-20",
-        "priceAtFiling": 196.45,
-        "reaction1d": 1.22,
-        "forward60d": -6.58,
-        "forward90d": 6.02
+        "priceAtFiling": 198.85,
+        "reaction1d": 0.0,
+        "forward60d": -7.71,
+        "forward90d": 4.74
       }
     ]
   },
@@ -9723,56 +9702,56 @@
     "returns": [
       {
         "date": "2026-10-28",
-        "priceAtFiling": 273.76,
+        "priceAtFiling": 272.36,
         "reaction1d": -0.05,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-08-05",
-        "priceAtFiling": 201.48,
+        "priceAtFiling": 200.45,
         "reaction1d": 1.47,
         "forward60d": 33.87,
         "forward90d": 34.97
       },
       {
         "date": "2026-04-29",
-        "priceAtFiling": 171.33,
+        "priceAtFiling": 170.46,
         "reaction1d": 3.26,
         "forward60d": 1.05,
         "forward90d": 19.51
       },
       {
         "date": "2026-02-04",
-        "priceAtFiling": 151.52,
+        "priceAtFiling": 150.75,
         "reaction1d": -0.17,
         "forward60d": 15.58,
         "forward90d": 17.49
       },
       {
         "date": "2025-10-29",
-        "priceAtFiling": 134.03,
+        "priceAtFiling": 133.35,
         "reaction1d": -0.67,
         "forward60d": -6.03,
         "forward90d": 2.32
       },
       {
         "date": "2025-07-25",
-        "priceAtFiling": 120.19,
+        "priceAtFiling": 119.58,
         "reaction1d": 2.18,
         "forward60d": 6.89,
         "forward90d": 9.75
       },
       {
         "date": "2025-04-25",
-        "priceAtFiling": 99.04,
+        "priceAtFiling": 98.53,
         "reaction1d": 1.74,
         "forward60d": 16.01,
         "forward90d": 20.73
       },
       {
         "date": "2025-01-31",
-        "priceAtFiling": 111.28,
+        "priceAtFiling": 110.71,
         "reaction1d": -0.01,
         "forward60d": 6.45,
         "forward90d": -11.43
@@ -10214,7 +10193,7 @@
       },
       {
         "date": "2025-07-31",
-        "priceAtFiling": 405.71,
+        "priceAtFiling": 405.72,
         "reaction1d": -2.7,
         "forward60d": 0.73,
         "forward90d": 10.51
@@ -10455,7 +10434,7 @@
     "returns": [
       {
         "date": "2026-01-12",
-        "priceAtFiling": 765.04,
+        "priceAtFiling": 764.26,
         "reaction1d": -1.18,
         "forward60d": -2.78,
         "forward90d": -2.69
@@ -10526,42 +10505,42 @@
     "returns": [
       {
         "date": "2026-05-05",
-        "priceAtFiling": 433.25,
+        "priceAtFiling": 431.69,
         "reaction1d": 5.37,
         "forward60d": 11.11,
         "forward90d": 10.67
       },
       {
         "date": "2026-02-05",
-        "priceAtFiling": 402.81,
+        "priceAtFiling": 401.35,
         "reaction1d": 2.05,
         "forward60d": -9.4,
         "forward90d": 13.34
       },
       {
         "date": "2025-11-06",
-        "priceAtFiling": 367.58,
+        "priceAtFiling": 366.26,
         "reaction1d": 0.27,
         "forward60d": 9.05,
         "forward90d": 15.82
       },
       {
         "date": "2025-08-06",
-        "priceAtFiling": 323.09,
+        "priceAtFiling": 321.93,
         "reaction1d": 1.19,
         "forward60d": 6.46,
         "forward90d": 9.91
       },
       {
         "date": "2025-05-07",
-        "priceAtFiling": 277.18,
+        "priceAtFiling": 276.18,
         "reaction1d": 2.85,
         "forward60d": 20.2,
         "forward90d": 22.71
       },
       {
         "date": "2025-02-10",
-        "priceAtFiling": 294.63,
+        "priceAtFiling": 293.57,
         "reaction1d": 0.47,
         "forward60d": -23.79,
         "forward90d": -0.4
@@ -10919,42 +10898,42 @@
     "returns": [
       {
         "date": "2026-04-30",
-        "priceAtFiling": 95.12,
+        "priceAtFiling": 94.35,
         "reaction1d": 0.01,
         "forward60d": 0.88,
         "forward90d": 0.15
       },
       {
         "date": "2026-02-19",
-        "priceAtFiling": 93.5,
+        "priceAtFiling": 92.74,
         "reaction1d": -0.79,
         "forward60d": -1.62,
         "forward90d": -0.69
       },
       {
         "date": "2025-10-30",
-        "priceAtFiling": 92.03,
+        "priceAtFiling": 91.28,
         "reaction1d": -1.08,
         "forward60d": -7.16,
         "forward90d": -6.33
       },
       {
         "date": "2025-07-31",
-        "priceAtFiling": 90.74,
+        "priceAtFiling": 90.0,
         "reaction1d": 0.54,
         "forward60d": 0.18,
         "forward90d": -0.24
       },
       {
         "date": "2025-05-01",
-        "priceAtFiling": 87.11,
+        "priceAtFiling": 86.4,
         "reaction1d": -0.45,
         "forward60d": 1.25,
         "forward90d": 4.63
       },
       {
         "date": "2025-02-20",
-        "priceAtFiling": 83.64,
+        "priceAtFiling": 82.96,
         "reaction1d": 0.66,
         "forward60d": 2.74,
         "forward90d": 2.95
@@ -11080,42 +11059,42 @@
     "returns": [
       {
         "date": "2026-05-11",
-        "priceAtFiling": 200.64,
+        "priceAtFiling": 200.11,
         "reaction1d": 4.46,
         "forward60d": 7.33,
         "forward90d": 18.71
       },
       {
         "date": "2026-02-04",
-        "priceAtFiling": 262.02,
+        "priceAtFiling": 261.33,
         "reaction1d": -7.74,
         "forward60d": -16.55,
         "forward90d": -19.21
       },
       {
         "date": "2025-11-05",
-        "priceAtFiling": 241.11,
+        "priceAtFiling": 240.47,
         "reaction1d": 6.94,
         "forward60d": 5.58,
         "forward90d": 7.6
       },
       {
         "date": "2025-08-06",
-        "priceAtFiling": 218.76,
+        "priceAtFiling": 218.18,
         "reaction1d": 6.79,
         "forward60d": 9.07,
         "forward90d": 9.62
       },
       {
         "date": "2025-05-14",
-        "priceAtFiling": 224.45,
+        "priceAtFiling": 223.86,
         "reaction1d": 8.52,
         "forward60d": -0.52,
         "forward90d": 7.4
       },
       {
         "date": "2025-02-05",
-        "priceAtFiling": 217.31,
+        "priceAtFiling": 216.73,
         "reaction1d": 2.09,
         "forward60d": -3.41,
         "forward90d": 0.99
@@ -11409,11 +11388,18 @@
     "sector": "Consumer Defensive",
     "returns": [
       {
+        "date": "2026-11-18",
+        "priceAtFiling": 165.93,
+        "reaction1d": 0.92,
+        "forward60d": null,
+        "forward90d": null
+      },
+      {
         "date": "2026-08-19",
         "priceAtFiling": 157.89,
         "reaction1d": -0.47,
         "forward60d": -3.59,
-        "forward90d": null
+        "forward90d": 1.04
       },
       {
         "date": "2026-05-20",
@@ -11459,10 +11445,10 @@
       },
       {
         "date": "2024-11-20",
-        "priceAtFiling": 112.66,
-        "reaction1d": -0.11,
-        "forward60d": 12.83,
-        "forward90d": 7.8
+        "priceAtFiling": NaN,
+        "reaction1d": NaN,
+        "forward60d": NaN,
+        "forward90d": NaN
       }
     ]
   },
@@ -11472,56 +11458,56 @@
     "returns": [
       {
         "date": "2026-10-28",
-        "priceAtFiling": 221.24,
+        "priceAtFiling": 220.42,
         "reaction1d": 0.69,
         "forward60d": null,
         "forward90d": null
       },
       {
         "date": "2026-07-22",
-        "priceAtFiling": 199.5,
+        "priceAtFiling": 198.76,
         "reaction1d": -0.74,
         "forward60d": 5.27,
         "forward90d": 7.1
       },
       {
         "date": "2026-04-22",
-        "priceAtFiling": 219.33,
+        "priceAtFiling": 218.52,
         "reaction1d": -1.5,
         "forward60d": -3.41,
         "forward90d": -5.08
       },
       {
         "date": "2026-01-21",
-        "priceAtFiling": 228.52,
+        "priceAtFiling": 227.67,
         "reaction1d": 0.15,
         "forward60d": -12.81,
         "forward90d": 5.6
       },
       {
         "date": "2025-10-29",
-        "priceAtFiling": 238.17,
+        "priceAtFiling": 237.29,
         "reaction1d": 1.12,
         "forward60d": -3.72,
         "forward90d": -4.15
       },
       {
         "date": "2025-07-23",
-        "priceAtFiling": 199.16,
+        "priceAtFiling": 198.42,
         "reaction1d": 1.76,
         "forward60d": 8.58,
         "forward90d": 13.36
       },
       {
         "date": "2025-04-23",
-        "priceAtFiling": 133.53,
+        "priceAtFiling": 133.04,
         "reaction1d": 5.48,
         "forward60d": 22.41,
         "forward90d": 33.22
       },
       {
         "date": "2025-01-22",
-        "priceAtFiling": 151.58,
+        "priceAtFiling": 151.02,
         "reaction1d": 1.22,
         "forward60d": -3.54,
         "forward90d": -13.59
@@ -11539,49 +11525,49 @@
     "returns": [
       {
         "date": "2026-05-07",
-        "priceAtFiling": 131.02,
+        "priceAtFiling": 130.73,
         "reaction1d": 1.05,
         "forward60d": 2.27,
         "forward90d": 4.14
       },
       {
         "date": "2026-02-26",
-        "priceAtFiling": 118.08,
+        "priceAtFiling": 117.82,
         "reaction1d": 2.55,
         "forward60d": 13.81,
         "forward90d": 9.88
       },
       {
         "date": "2026-01-08",
-        "priceAtFiling": 109.14,
+        "priceAtFiling": 108.9,
         "reaction1d": 2.55,
         "forward60d": 3.57,
         "forward90d": 8.51
       },
       {
         "date": "2025-11-06",
-        "priceAtFiling": 107.32,
+        "priceAtFiling": 107.08,
         "reaction1d": 0.82,
         "forward60d": 15.06,
         "forward90d": -2.01
       },
       {
         "date": "2025-07-31",
-        "priceAtFiling": 117.85,
+        "priceAtFiling": 117.6,
         "reaction1d": -3.02,
         "forward60d": 1.25,
         "forward90d": 7.51
       },
       {
         "date": "2025-05-01",
-        "priceAtFiling": 123.81,
+        "priceAtFiling": 123.54,
         "reaction1d": 0.43,
         "forward60d": -5.72,
         "forward90d": -9.26
       },
       {
         "date": "2025-02-27",
-        "priceAtFiling": 136.49,
+        "priceAtFiling": 136.19,
         "reaction1d": -4.57,
         "forward60d": -2.78,
         "forward90d": -12.5
@@ -12397,7 +12383,7 @@
     "returns": [
       {
         "date": "2025-01-14",
-        "priceAtFiling": 196.42,
+        "priceAtFiling": 196.21,
         "reaction1d": 1.11,
         "forward60d": -8.07,
         "forward90d": -12.42
@@ -12454,13 +12440,6 @@
         "reaction1d": 1.4,
         "forward60d": -24.64,
         "forward90d": -16.62
-      },
-      {
-        "date": "2024-11-14",
-        "priceAtFiling": 106.63,
-        "reaction1d": 5.46,
-        "forward60d": -0.51,
-        "forward90d": 0.54
       }
     ]
   },
@@ -12750,42 +12729,42 @@
     "returns": [
       {
         "date": "2026-05-07",
-        "priceAtFiling": 106.31,
+        "priceAtFiling": 106.0,
         "reaction1d": -4.15,
         "forward60d": -10.02,
         "forward90d": -5.09
       },
       {
         "date": "2026-02-12",
-        "priceAtFiling": 107.07,
+        "priceAtFiling": 106.76,
         "reaction1d": 5.14,
         "forward60d": -4.23,
         "forward90d": -10.6
       },
       {
         "date": "2025-11-06",
-        "priceAtFiling": 121.4,
+        "priceAtFiling": 121.05,
         "reaction1d": 2.94,
         "forward60d": -2.13,
         "forward90d": -6.6
       },
       {
         "date": "2025-08-07",
-        "priceAtFiling": 105.99,
+        "priceAtFiling": 105.68,
         "reaction1d": -0.76,
         "forward60d": 16.46,
         "forward90d": 17.02
       },
       {
         "date": "2025-05-06",
-        "priceAtFiling": 82.35,
+        "priceAtFiling": 82.1,
         "reaction1d": 0.72,
         "forward60d": 30.45,
         "forward90d": 28.5
       },
       {
         "date": "2025-02-13",
-        "priceAtFiling": 79.12,
+        "priceAtFiling": 78.89,
         "reaction1d": 10.38,
         "forward60d": -8.36,
         "forward90d": 21.49
